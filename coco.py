@@ -1,11 +1,21 @@
 # COCO Dataset
-from dataset import JointsDataset
+import torch
+import torchvision.transforms as transforms
+import torch.utils.data as data
+import os
+import pickle
+import numpy as np
+from PIL import Image
+from pycocotools.coco import COCO
 
 
-class CocoDataset(JointsDataset):
+class CocoDataset(data.Dataset):
     def __init__(self, config):
-        super().__init__(config)
-        return
+        self.root = config.ROOT
+        self.json = config.JSON
+        self.coco = COCO(self.json)  # including open/read json file
+        self.ids = list(self.coco.anns.keys())
+        self.transform = config.TRANSFORM
 
     def evaluate(self, preds, *args, **kwargs):
         pass
