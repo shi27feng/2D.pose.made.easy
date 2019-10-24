@@ -1,7 +1,7 @@
 """
 Hourglass network inserted in the pre-activated Resnet
 Use lr=0.01 for current version
-(c) YANG, Wei
+
 """
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,41 +15,29 @@ __all__ = ['HourglassNet', 'hg']
 class Bottleneck(nn.Module):
     expansion = 2
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, num_in_channels, planes, stride=1, down_sample=None):
         super(Bottleneck, self).__init__()
 
-        self.bn1 = nn.BatchNorm2d(inplanes)
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=True)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=True)
-        self.bn3 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, planes * 2, kernel_size=1, bias=True)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
+        self.layers = [
+            nn.BatchNorm2d(num_in_channels),
+            nn.Conv2d(num_in_channels, planes, kernel_size=1, bias=True),
+            nn.BatchNorm2d(planes),
+            nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=True),
+            nn.BatchNorm2d(planes),
+            nn.Conv2d(planes, planes * 2, kernel_size=1, bias=True),
+            nn.ReLU(inplace=True)]
+        self.down_sample = down_sample
         self.stride = stride
 
     def forward(self, x):
         residual = x
-
-        out = self.bn1(x)
-        out = self.relu(out)
-        out = self.conv1(out)
-
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = self.conv2(out)
-
-        out = self.bn3(out)
-        out = self.relu(out)
-        out = self.conv3(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-
-        return out
+        net = x
+        for layer in self.layers:
+            net = layer(net)
+        if self.down_sample is not None:
+            residual = self.down_sample(x)
+        net += residual
+        return net
 
 
 class Hourglass(nn.Module):
@@ -66,15 +54,15 @@ class Hourglass(nn.Module):
         return nn.Sequential(*layers)
 
     def _make_hour_glass(self, block, num_blocks, planes, depth):
-        hg = []
+        hg_blocks = []
         for i in range(depth):
             res = []
             for j in range(3):
                 res.append(self._make_residual(block, num_blocks, planes))
             if i == 0:
                 res.append(self._make_residual(block, num_blocks, planes))
-            hg.append(nn.ModuleList(res))
-        return nn.ModuleList(hg)
+            hg_blocks.append(nn.ModuleList(res))
+        return nn.ModuleList(hg_blocks)
 
     def _hour_glass_forward(self, n, x):
         up1 = self.hg[n - 1][0](x)
@@ -95,29 +83,29 @@ class Hourglass(nn.Module):
 
 
 class HourglassNet(nn.Module):
-    '''Hourglass model from Newell et al ECCV 2016'''
+    """Hourglass model from Newell et al ECCV 2016"""
 
     def __init__(self, block, num_stacks=2, num_blocks=4, num_classes=16):
         super(HourglassNet, self).__init__()
 
-        self.inplanes = 64
-        self.num_feats = 128
+        self.num_in_channels = 64
+        self.num_feature_maps = 128
         self.num_stacks = num_stacks
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
+        self.conv1 = nn.Conv2d(3, self.num_in_channels, kernel_size=7, stride=2, padding=3,
                                bias=True)
-        self.bn1 = nn.BatchNorm2d(self.inplanes)
+        self.bn1 = nn.BatchNorm2d(self.num_in_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.layer1 = self._make_residual(block, self.inplanes, 1)
-        self.layer2 = self._make_residual(block, self.inplanes, 1)
-        self.layer3 = self._make_residual(block, self.num_feats, 1)
+        self.layer1 = self._make_residual(block, self.num_in_channels, 1)
+        self.layer2 = self._make_residual(block, self.num_in_channels, 1)
+        self.layer3 = self._make_residual(block, self.num_feature_maps, 1)
         self.maxpool = nn.MaxPool2d(2, stride=2)
 
         # build hourglass modules
-        ch = self.num_feats * block.expansion
+        ch = self.num_feature_maps * block.expansion
         hg, res, fc, score, fc_, score_ = [], [], [], [], [], []
         for i in range(num_stacks):
-            hg.append(Hourglass(block, num_blocks, self.num_feats, 4))
-            res.append(self._make_residual(block, self.num_feats, num_blocks))
+            hg.append(Hourglass(block, num_blocks, self.num_feature_maps, 4))
+            res.append(self._make_residual(block, self.num_feature_maps, num_blocks))
             fc.append(self._make_fc(ch, ch))
             score.append(nn.Conv2d(ch, num_classes, kernel_size=1, bias=True))
             if i < num_stacks - 1:
@@ -131,18 +119,17 @@ class HourglassNet(nn.Module):
         self.score_ = nn.ModuleList(score_)
 
     def _make_residual(self, block, planes, blocks, stride=1):
-        downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
+        down_sample = None
+        if stride != 1 or self.num_in_channels != planes * block.expansion:
+            down_sample = nn.Sequential(
+                nn.Conv2d(self.num_in_channels, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=True),
             )
 
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * block.expansion
+        layers = [block(self.num_in_channels, planes, stride, down_sample)]
+        self.num_in_channels = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+            layers.append(block(self.num_in_channels, planes))
 
         return nn.Sequential(*layers)
 

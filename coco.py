@@ -1,5 +1,6 @@
 # COCO Dataset
 import os
+
 # import cv2
 import torch.utils.data as data
 from PIL import Image
@@ -12,7 +13,7 @@ class CocoDataset(data.Dataset):
         self.is_train = is_train
         self.coco = COCO(config["annF"])  # including open/read json file
         self.ids = list(sorted(self.coco.imgs.keys()))
-        # self.transform = config["transform"]
+        self.transform = config["transform"]
 
     def __getitem__(self, index):
         """
