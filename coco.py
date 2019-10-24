@@ -1,24 +1,40 @@
 # COCO Dataset
-import torch
-import torchvision.transforms as transforms
-import torch.utils.data as data
 import os
-import pickle
-import numpy as np
+# import cv2
+import torch.utils.data as data
 from PIL import Image
 from pycocotools.coco import COCO
 
 
 class CocoDataset(data.Dataset):
-    def __init__(self, config):
-        self.root = config.ROOT
-        self.json = config.JSON
-        self.coco = COCO(self.json)  # including open/read json file
-        self.ids = list(self.coco.anns.keys())
-        self.transform = config.TRANSFORM
+    def __init__(self, config, is_train=True):
+        self.root = config["root"]
+        self.is_train = is_train
+        self.coco = COCO(config["annF"])  # including open/read json file
+        self.ids = list(sorted(self.coco.imgs.keys()))
+        # self.transform = config["transform"]
 
-    def evaluate(self, preds, *args, **kwargs):
-        pass
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+        Returns:
+            tuple: Tuple (image, target). target is the object returned by ``coco.loadAnns``.
+        """
+        coco = self.coco
+        img_id = self.ids[index]
+        ann_ids = coco.getAnnIds(imgIds=img_id)
+        target = coco.loadAnns(ann_ids)
 
-    def _get_db(self):
-        pass
+        path = coco.loadImgs(img_id)[0]['file_name']
+
+        img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        # img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
+
+        # if self.transforms is not None:
+        #     img, target = self.transforms(img, target)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.ids)
