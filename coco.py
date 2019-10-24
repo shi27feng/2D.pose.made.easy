@@ -1,6 +1,11 @@
 # COCO Dataset
 import os
 
+try:
+    import cupy as np
+except ImportError:
+    import numpy as np
+
 # import cv2
 import torch.utils.data as data
 from PIL import Image
@@ -34,6 +39,8 @@ class CocoDataset(data.Dataset):
 
         # if self.transforms is not None:
         #     img, target = self.transforms(img, target)
+
+        # TODO: add codes for creating heatmaps of training image
 
         return img, target
 
