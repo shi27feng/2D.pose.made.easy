@@ -1,26 +1,30 @@
+"""
+This file is from website:
+https://github.com/Daniil-Osokin/lightweight-human-pose-estimation.pytorch/tree/master/scripts
+"""
 import argparse
 import json
 import pickle
 
 
-def prepare_annotations(annotations_per_image, images_info, net_input_size):
+def prepare_annotations(annotations_per_image, ims_info, net_input_size):
     """Prepare labels for training. For each annotated person calculates center
     to perform crop around it during the training. Also converts data to the internal format.
 
     :param annotations_per_image: all annotations for specified image id
-    :param images_info: auxiliary information about all images
+    :param ims_info: auxiliary information about all images
     :param net_input_size: network input size during training
     :return: list of prepared annotations
     """
-    prepared_annotations = []
+    prep_annotations = []
     for _, annotations in annotations_per_image.items():
         previous_centers = []
-        for annotation in annotations[0]:
-            if (annotation['num_keypoints'] < 5
-                    or annotation['area'] < 32 * 32):
+        for ann in annotations[0]:
+            if (ann['num_keypoints'] < 5
+                    or ann['area'] < 32 * 32):
                 continue
-            person_center = [annotation['bbox'][0] + annotation['bbox'][2] / 2,
-                             annotation['bbox'][1] + annotation['bbox'][3] / 2]
+            person_center = [ann['bbox'][0] + ann['bbox'][2] / 2,
+                             ann['bbox'][1] + ann['bbox'][3] / 2]
             is_close = False
             for previous_center in previous_centers:
                 distance_to_previous = ((person_center[0] - previous_center[0]) ** 2
@@ -32,31 +36,31 @@ def prepare_annotations(annotations_per_image, images_info, net_input_size):
                 continue
 
             prepared_annotation = {
-                'img_paths': images_info[annotation['image_id']]['file_name'],
-                'img_width': images_info[annotation['image_id']]['width'],
-                'img_height': images_info[annotation['image_id']]['height'],
+                'img_paths': ims_info[ann['image_id']]['file_name'],
+                'im_width': ims_info[ann['image_id']]['width'],
+                'im_height': ims_info[ann['image_id']]['height'],
                 'objpos': person_center,
-                'image_id': annotation['image_id'],
-                'bbox': annotation['bbox'],
-                'segment_area': annotation['area'],
-                'scale_provided': annotation['bbox'][3] / net_input_size,
-                'num_keypoints': annotation['num_keypoints'],
+                'image_id': ann['image_id'],
+                'bbox': ann['bbox'],
+                'segment_area': ann['area'],
+                'scale_provided': ann['bbox'][3] / net_input_size,
+                'num_keypoints': ann['num_keypoints'],
                 'segmentations': annotations[1]
             }
 
             keypoints = []
-            for i in range(len(annotation['keypoints']) // 3):
-                keypoint = [annotation['keypoints'][i * 3], annotation['keypoints'][i * 3 + 1], 2]
-                if annotation['keypoints'][i * 3 + 2] == 1:
+            for i in range(len(ann['keypoints']) // 3):
+                keypoint = [ann['keypoints'][i * 3], ann['keypoints'][i * 3 + 1], 2]
+                if ann['keypoints'][i * 3 + 2] == 1:
                     keypoint[2] = 0
-                elif annotation['keypoints'][i * 3 + 2] == 2:
+                elif ann['keypoints'][i * 3 + 2] == 2:
                     keypoint[2] = 1
                 keypoints.append(keypoint)
             prepared_annotation['keypoints'] = keypoints
 
             prepared_other_annotations = []
             for other_annotation in annotations[0]:
-                if other_annotation == annotation:
+                if other_annotation == ann:
                     continue
 
                 prepared_other_annotation = {
@@ -80,10 +84,10 @@ def prepare_annotations(annotations_per_image, images_info, net_input_size):
                 prepared_other_annotations.append(prepared_other_annotation)
 
             prepared_annotation['processed_other_annotations'] = prepared_other_annotations
-            prepared_annotations.append(prepared_annotation)
+            prep_annotations.append(prepared_annotation)
 
-            previous_centers.append((person_center[0], person_center[1], annotation['bbox'][2], annotation['bbox'][3]))
-    return prepared_annotations
+            previous_centers.append((person_center[0], person_center[1], ann['bbox'][2], ann['bbox'][3]))
+    return prep_annotations
 
 
 if __name__ == '__main__':

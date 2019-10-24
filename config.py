@@ -10,3 +10,9 @@ valid_config = {
     'annF': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_val2017.json"),
     'transform': False
 }
+
+# radius ratio to bbox
+joint_sigmas = {
+    0: 10,    # nose
+    1: 20     # neck
+}
