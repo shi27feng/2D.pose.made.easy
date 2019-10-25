@@ -1,4 +1,4 @@
-# 2D.human.pose.made.easy (not final name)
+# 2D Human Pose Estimation made easy (not final name)
 Experimental repo for the human pose estimation
 
 ![pipeline](pipline.PNG)
