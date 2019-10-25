@@ -5,10 +5,7 @@ inspired by:
 
 """
 import torch.nn as nn
-import torch.nn.functional as F
-
-# from .preresnet import BasicBlock, Bottleneck
-
+import torch.nn.functional as func
 
 __all__ = ['HourglassNet', 'hg']
 
@@ -69,7 +66,7 @@ class Hourglass(nn.Module):
 
     def _hour_glass_forward(self, n, x):
         up1 = self.hg[n - 1][0](x)
-        low1 = F.max_pool2d(x, 2, stride=2)
+        low1 = func.max_pool2d(x, 2, stride=2)
         low1 = self.hg[n - 1][1](low1)
 
         if n > 1:
@@ -77,7 +74,7 @@ class Hourglass(nn.Module):
         else:
             low2 = self.hg[n - 1][3](low1)
         low3 = self.hg[n - 1][2](low2)
-        up2 = F.interpolate(low3, scale_factor=2)
+        up2 = func.interpolate(low3, scale_factor=2)
         out = up1 + up2
         return out
 
