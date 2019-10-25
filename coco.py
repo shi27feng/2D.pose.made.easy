@@ -9,16 +9,22 @@ except ImportError:
 # import cv2
 import torch.utils.data as data
 from PIL import Image
-from pycocotools.coco import COCO
+from utils import prepare_annotations, _make_all_in_one_keypoints_map
 
 
 class CocoDataset(data.Dataset):
-    def __init__(self, config, is_train=True):
-        self.root = config["root"]
+    def __init__(self, cfg, is_train=True):
+        self.root = cfg["root"]
         self.is_train = is_train
-        self.coco = COCO(config["annF"])  # including open/read json file
-        self.ids = list(sorted(self.coco.imgs.keys()))
-        self.transform = config["transform"]
+        # from pycocotools.coco import COCO
+        # self.coco = COCO(cfg['annF'])
+        if os.path.exists(cfg['annP']):
+            import pickle
+            with open(cfg['annP'], 'rb') as f:
+                self.annotations = pickle.load(f)
+        else:
+            self.annotations = prepare_annotations(cfg)
+        self.transform = cfg["transform"]
 
     def __getitem__(self, index):
         """
@@ -26,12 +32,7 @@ class CocoDataset(data.Dataset):
         :param index: int
         :return: dict{image, feature_maps}
         """
-        coco = self.coco
-        img_id = self.ids[index]
-        ann_ids = coco.getAnnIds(imgIds=img_id)
-        target = coco.loadAnns(ann_ids)
-
-        path = coco.loadImgs(img_id)[0]['file_name']
+        path = self.annotations[index]['file_name']
 
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
         # img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
@@ -41,7 +42,7 @@ class CocoDataset(data.Dataset):
 
         # TODO: add codes for creating heatmaps of training image
 
-        return img, target
+        return img, self.annotations['keypoints']
 
     def __len__(self):
-        return len(self.ids)
+        return len(self.annotations)
