@@ -22,10 +22,9 @@ class CocoDataset(data.Dataset):
 
     def __getitem__(self, index):
         """
-        Args:
-            index (int): Index
-        Returns:
-            tuple: Tuple (image, target). target is the object returned by ``coco.loadAnns``.
+
+        :param index: int
+        :return: dict{image, feature_maps}
         """
         coco = self.coco
         img_id = self.ids[index]
