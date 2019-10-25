@@ -6,9 +6,8 @@ try:
 except ImportError:
     import numpy as np
 
-# import cv2
+import cv2
 import torch.utils.data as data
-from PIL import Image
 from utils import prepare_annotations, _make_all_in_one_keypoints_map
 
 
@@ -35,8 +34,7 @@ class CocoDataset(data.Dataset):
         annotation = self.annotations[index]
         path = annotation['file_name']
 
-        img = Image.open(os.path.join(self.root, path)).convert('RGB')
-        # img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
+        img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
 
         # if self.transforms is not None:
         #     img, target = self.transforms(img, target)
@@ -52,3 +50,6 @@ class CocoDataset(data.Dataset):
 
     def __len__(self):
         return len(self.annotations)
+
+    def _mask(self, segmentation, ):
+        return
