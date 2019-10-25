@@ -32,7 +32,8 @@ class CocoDataset(data.Dataset):
         :param index: int
         :return: dict{image, feature_maps}
         """
-        path = self.annotations[index]['file_name']
+        annotation = self.annotations[index]
+        path = annotation['file_name']
 
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
         # img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
@@ -41,8 +42,13 @@ class CocoDataset(data.Dataset):
         #     img, target = self.transforms(img, target)
 
         # TODO: add codes for creating heatmaps of training image
-
-        return img, self.annotations['keypoints']
+        hm = _make_all_in_one_keypoints_map(annotation['keypoints'],
+                                            annotation['img_height'],
+                                            annotation['img_width'],
+                                            hm_height=100, hm_width=100,
+                                            sigmas=[],    # ????
+                                            num_parts=18)
+        return img, annotation, hm
 
     def __len__(self):
         return len(self.annotations)
