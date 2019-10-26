@@ -7,7 +7,7 @@ Experimental repo for the human pose estimation
 1. COCO
 
 ![coco_part_numbering](coco_part_numbering.png)
-
+[detailed specification of MSCOCO (Chinese)](https://zhuanlan.zhihu.com/p/29393415)
 "keypoints": {
         0: "nose",
         1: "left_eye",
