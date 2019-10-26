@@ -35,6 +35,7 @@ class CocoDataset(data.Dataset):
         path = ann['file_name']
 
         img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
+        img = (img.astype(np.float32) - 128) / 256
         mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
         # if self.transforms is not None:
         #     img, target = self.transforms(img, target)
@@ -49,11 +50,11 @@ class CocoDataset(data.Dataset):
                                             num_parts=18)
         sample = {
             'annotation': ann,
-            'image': img,
+            'image': img.transpose((2, 0, 1)),  # why transpose?
             'mask': mask,
             'keypoint_map': hm
         }
-        return
+        return sample
 
     def __len__(self):
         return len(self.annotations)
