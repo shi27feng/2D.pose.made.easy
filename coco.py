@@ -8,13 +8,15 @@ except ImportError:
 
 import cv2
 import torch.utils.data as data
-from utils import prepare_annotations, _make_all_in_one_keypoints_map
+from utils import prepare_annotations, _make_all_in_one_keypoints_map, _make_mask
 
 
 class CocoDataset(data.Dataset):
     def __init__(self, cfg, is_train=True):
         self.root = cfg["root"]
         self.is_train = is_train
+        self.scales = cfg['scales']
+        self.sigmas = cfg['sigmas']
         if os.path.exists(cfg['annP']):
             import pickle
             with open(cfg['annP'], 'rb') as f:
@@ -29,22 +31,29 @@ class CocoDataset(data.Dataset):
         :param index: int
         :return: dict{image, feature_maps}
         """
-        annotation = self.annotations[index]
-        path = annotation['file_name']
+        ann = self.annotations[index]
+        path = ann['file_name']
 
         img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
-
+        mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
         # if self.transforms is not None:
         #     img, target = self.transforms(img, target)
 
         # TODO: add codes for creating heatmaps of training image
-        hm = _make_all_in_one_keypoints_map(annotation['keypoints'],
-                                            annotation['img_height'],
-                                            annotation['img_width'],
-                                            hm_height=100, hm_width=100,
-                                            sigmas=[],    # ????
+        hm = _make_all_in_one_keypoints_map(ann['keypoints'],
+                                            ann['img_height'],
+                                            ann['img_width'],
+                                            ann['img_height'] / self.scales[0],
+                                            ann['img_width'] / self.scales[1],
+                                            sigmas=self.sigmas,  # ????
                                             num_parts=18)
-        return img, annotation, hm
+        sample = {
+            'annotation': ann,
+            'image': img,
+            'mask': mask,
+            'keypoint_map': hm
+        }
+        return
 
     def __len__(self):
         return len(self.annotations)

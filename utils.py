@@ -4,64 +4,76 @@ except ImportError:
     import numpy as np
 
 import math
+import cv2
 import pickle
+import pycocotools.mask as mk
 
 
-def _make_keypoint_heatmap(keypoints,
-                           im_height, im_width,
-                           hm_height, hm_width,
-                           heatmap_channels,
-                           sigma, scales=None):
-    """
-    function that create gaussian filter heatmap based keypoints.
-    :param keypoints: ndarray with shape [person_num, joints_num, 3], each joint contains three attribute, [x, y, v]
-    :param im_height: ori_img height
-    :param im_width: ori_img width
-    :param hm_height: hm_height
-    :param hm_width: heatmap_width
-    :param heatmap_channels: number of joints
-    :param sigma: parameter about gaussian function
-    :param scales: optional. if scales not none, it means each every single point has a scale attribute,
-                  scale == -1 or scale == 3 means this point is can not define or has regular size.
-                  scale == 2 means this point has middle size.
-                  scale == 1 means thi point has small size.
-    :return: heatmap
-            A ndarray with shape [hm_height, heatmap_width, num_parts]
-    """
-    x_scale = hm_width / im_width
-    y_scale = hm_height / im_height
+def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
+    mask = np.ones(shape=(height, width), dtype=np.float32)
+    for seg in segmentation:
+        rle = mk.frPyObjects(seg, mask.shape[0], mask.shape[1])
+        mask[mk.decode(rle) > 0.5] = 0
+    if scales[0] != 1. and scales[1] != 1.:
+        mask = cv2.resize(mask, dsize=None, fx=1 / scales[0], fy=1 / scales[0], interpolation=cv2.INTER_AREA)
+    return mask
 
-    heatmap = np.zeros((hm_height, hm_width, heatmap_channels), dtype=np.float32)
 
-    for i in range(heatmap_channels):
-        single_heatmap = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)
-        for j in range(keypoints.shape[0]):
-            people = keypoints[j]
-            center_x = people[i][0] * x_scale
-            center_y = people[i][1] * y_scale
-
-            if center_x >= hm_width or center_y >= hm_height:
-                continue
-            if center_x < 0 or center_y < 0:
-                continue
-            if center_x == 0 and center_y == 0:
-                continue
-            if people[i][2] == 3:
-                continue
-            if scales is not None:
-                scale = scales[j][i][0]
-                if scale == -1 or scale == 3:
-                    sigma = 1. * sigma
-                elif scale == 2:
-                    sigma = 0.8 * sigma
-                else:
-                    sigma = 0.5 * sigma
-
-            single_heatmap = _add_gaussian(single_heatmap, center_x, center_y, sigma=sigma)
-
-        heatmap[:, :, i] = single_heatmap
-
-    return heatmap
+# def _make_keypoint_heatmap(keypoints,
+#                            im_height, im_width,
+#                            hm_height, hm_width,
+#                            heatmap_channels,
+#                            sigma, scales=None):
+#     """
+#     function that create gaussian filter heatmap based keypoints.
+#     :param keypoints: ndarray with shape [person_num, joints_num, 3], each joint contains three attribute, [x, y, v]
+#     :param im_height: ori_img height
+#     :param im_width: ori_img width
+#     :param hm_height: hm_height
+#     :param hm_width: heatmap_width
+#     :param heatmap_channels: number of joints
+#     :param sigma: parameter about gaussian function
+#     :param scales: optional. if scales not none, it means each every single point has a scales attribute,
+#                   scales == -1 or scales == 3 means this point is can not define or has regular size.
+#                   scales == 2 means this point has middle size.
+#                   scales == 1 means thi point has small size.
+#     :return: heatmap
+#             A ndarray with shape [hm_height, heatmap_width, num_parts]
+#     """
+#     x_scale = hm_width / im_width
+#     y_scale = hm_height / im_height
+#
+#     heatmap = np.zeros((hm_height, hm_width, heatmap_channels), dtype=np.float32)
+#
+#     for i in range(heatmap_channels):
+#         single_heatmap = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)
+#         for j in range(keypoints.shape[0]):
+#             people = keypoints[j]
+#             center_x = people[i][0] * x_scale
+#             center_y = people[i][1] * y_scale
+#
+#             if center_x >= hm_width or center_y >= hm_height:
+#                 continue
+#             if center_x < 0 or center_y < 0:
+#                 continue
+#             if center_x == 0 and center_y == 0:
+#                 continue
+#             if people[i][2] == 3:
+#                 continue
+#             if scales is not None:
+#                 scales = scales[j][i][0]
+#                 if scales == -1 or scales == 3:
+#                     sigma = 1. * sigma
+#                 elif scales == 2:
+#                     sigma = 0.8 * sigma
+#                 else:
+#                     sigma = 0.5 * sigma
+#
+#             single_heatmap = _add_gaussian(single_heatmap, center_x, center_y, sigma=sigma)
+#
+#         heatmap[:, :, i] = single_heatmap
+#
+#     return heatmap
 
 
 def _make_all_in_one_keypoints_map(keypoints,
@@ -85,6 +97,7 @@ def _make_all_in_one_keypoints_map(keypoints,
                 heatmap = _add_gaussian(heatmap, center_x, center_y, sigma=sigmas[i])
             else:
                 continue
+    # TODO add neck keypoint
 
     return heatmap
 
