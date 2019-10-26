@@ -77,13 +77,14 @@ def _make_all_in_one_keypoints_map(keypoints,
     for j in range(keypoints.shape[0]):
         people = keypoints[j]
         for i in range(num_parts):
+            if people[i * 3 + 2] == 0:  # 0 = not labeled, 1 = labeled not visible
+                continue
             center_x = people[i * 3] * x_scale
             center_y = people[i * 3 + 1] * y_scale
-            if people[i * 3 + 2] == 3:
-                continue
             if 0 < center_x < hm_width and 0 < center_y < hm_height:
                 heatmap = _add_gaussian(heatmap, center_x, center_y, sigma=sigmas[i])
-            else: continue
+            else:
+                continue
 
     return heatmap
 
@@ -144,6 +145,7 @@ def prepare_annotations(cfg):
             'img_path': im['file_name'],
             'img_width': im['width'],
             'img_weight': im['height'],
+            'person_center': []
         }
         b_boxes = []
         segmentation = []
@@ -160,4 +162,3 @@ def prepare_annotations(cfg):
     with open(cfg['annP'], 'wb') as f:
         pickle.dump(prepared_ann_records, f)
     return prepared_ann_records
-

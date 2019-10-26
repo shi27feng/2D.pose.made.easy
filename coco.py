@@ -15,8 +15,6 @@ class CocoDataset(data.Dataset):
     def __init__(self, cfg, is_train=True):
         self.root = cfg["root"]
         self.is_train = is_train
-        # from pycocotools.coco import COCO
-        # self.coco = COCO(cfg['annF'])
         if os.path.exists(cfg['annP']):
             import pickle
             with open(cfg['annP'], 'rb') as f:
