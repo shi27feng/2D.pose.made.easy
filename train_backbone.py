@@ -10,11 +10,15 @@ from torchvision import transforms
 
 from coco import CocoDataset
 from models import HourglassNet, Bottleneck
+from loss import l2loss
 cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)  # To prevent freeze of DataLoader
 
 
 def train(cfg):
+    base_lr = cfg['base_lr']
+    batches_per_iter = cfg['batches_per_iter']
+    
     net = HourglassNet(Bottleneck,
                        num_stacks=cfg['num_stacks'],
                        num_blocks=cfg['num_blocks'],
@@ -79,8 +83,8 @@ def train(cfg):
 
             losses = []
             for loss_idx in range(len(total_losses) // 2):
-                losses.append(l2_loss(stages_output[loss_idx * 2], keypoint_maps, keypoint_masks, images.shape[0]))
-                losses.append(l2_loss(stages_output[loss_idx * 2 + 1], paf_maps, paf_masks, images.shape[0]))
+                losses.append(l2loss(stages_output[loss_idx * 2], keypoint_maps, keypoint_masks, images.shape[0]))
+                losses.append(l2loss(stages_output[loss_idx * 2 + 1], paf_maps, paf_masks, images.shape[0]))
                 total_losses[loss_idx * 2] += losses[-2].item() / batches_per_iter
                 total_losses[loss_idx * 2 + 1] += losses[-1].item() / batches_per_iter
 
