@@ -140,6 +140,17 @@ def person_center(bbox, scale=(1 - 0.618)):
             bbox[1] + bbox[3] / scale]
 
 
+def _process_keypoints(keypoints):
+    kps = list(np.zeros(len(keypoints) + 3))
+    kps[-len(keypoints):] = keypoints
+    kps[0: 3] = keypoints[0: 3]  # put nose at beginning
+    # add neck
+    kps[3: 6] = [(keypoints[3] + keypoints[12])/2,
+                 (keypoints[4] + keypoints[13])/2,
+                 2 if keypoints[5] == 2 and keypoints[14] == 2 else 0]
+    return kps
+
+
 def prepare_annotations(cfg):
     if cfg['annF'] is None:
         raise ValueError("no annotation file provided")
@@ -166,6 +177,7 @@ def prepare_annotations(cfg):
         for ann in annotations_img:
             b_boxes.append(ann['bbox'])
             segmentation = [*segmentation, *ann['segmentation']]
+            ann['keypoints'] = _process_keypoints(ann['keypoints'])
             keypoints.append(ann['keypoints'])
         record['bbox'] = b_boxes
         record['segmentation'] = segmentation

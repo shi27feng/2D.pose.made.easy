@@ -31,7 +31,7 @@ keypoint_names = ['nose', 'neck',
                   'r_sho', 'r_elb', 'r_wri', 'l_sho', 'l_elb', 'l_wri',
                   'r_hip', 'r_knee', 'r_ank', 'l_hip', 'l_knee', 'l_ank',
                   'r_eye', 'l_eye',
-                  'r_ear', 'l_ear']
+                  'r_ear', 'l_ear']  # 18 joints, 'neck' is computed by 'l_sho' and 'r_sho'
 
 sigmas = np.array([.26, .79,
                    .79, .72, .62, .79, .72, .62,
