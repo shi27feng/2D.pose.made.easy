@@ -62,7 +62,7 @@ def train(cfg):
     net = DataParallel(net).cuda()
     net.train()
     for epochId in range(current_epoch, 280):
-        scheduler.step()
+        scheduler.step(epoch=epochId)
         total_losses = [0, 0] * (cfg['num_hourglass_stages'] + 1)  # heatmaps loss, paf loss per stage
         batch_per_iter_idx = 0
         for batch_data in train_loader:

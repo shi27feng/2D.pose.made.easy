@@ -8,6 +8,11 @@ train_config = {
     'scales': [1., 1.],
     'batches_per_iter': 16,
     'base_lr': 1e-3,
+    'num_workers': 8,
+    'num_stacks': 2,
+    'num_blocks': 1,
+    'num_classes': 17 + 1,  # 1 for neck or center
+    'checkpoint_path': None,
     'transform': None
 }
 
