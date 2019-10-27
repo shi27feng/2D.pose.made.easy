@@ -36,24 +36,23 @@ class CocoDataset(data.Dataset):
 
         img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
         img = (img.astype(np.float32) - 128) / 256
-        mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
-        # if self.transforms is not None:
-        #     img, target = self.transforms(img, target)
-
-        # TODO: add codes for creating heatmaps of training image
-        hm = _make_all_in_one_keypoints_map(ann['keypoints'],
-                                            ann['img_height'],
-                                            ann['img_width'],
-                                            ann['img_height'] / self.scales[0],
-                                            ann['img_width'] / self.scales[1],
-                                            sigmas=self.sigmas,  # ????
-                                            num_parts=18)
         sample = {
             'annotation': ann,
             'image': img.transpose((2, 0, 1)),  # why transpose?
-            'mask': mask,
-            'keypoint_map': hm
         }
+        if self.is_train:
+            mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
+            # if self.transforms is not None:
+            #     img, target = self.transforms(img, target)
+
+            # TODO: add codes for creating heatmaps of training image
+            hm = _make_all_in_one_keypoints_map(ann['keypoints'],
+                                                ann['img_height'], ann['img_width'],
+                                                ann['img_height'] / self.scales[0], ann['img_width'] / self.scales[1],
+                                                sigmas=self.sigmas,  # TODO
+                                                num_parts=18)
+            sample['mask'] = mask
+            sample['keypoint_map'] = hm
         return sample
 
     def __len__(self):
