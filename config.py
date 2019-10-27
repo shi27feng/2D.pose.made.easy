@@ -12,7 +12,9 @@ train_config = {
     'num_stacks': 2,
     'num_blocks': 1,
     'num_classes': 17 + 1,  # 1 for neck or center
-    'checkpoint_path': None,
+    'log_after': 100,
+    'checkpoints_folder': "checkpoints",
+    'checkpoints_after': 5000,
     'transform': None
 }
 
@@ -20,6 +22,8 @@ valid_config = {
     'root': os.path.join(os.path.expanduser('~'), "Datasets/coco/val2017"),
     'annF': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_val2017.json"),
     'annP': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_val2017.pkl"),
+    'val_after': 5000,
+    'val_output_name': 'detections.json',
     'transform': False
 }
 
