@@ -6,6 +6,8 @@ train_config = {
     'annF': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_train2017.json"),
     'annP': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_train2017.pkl"),
     'scales': [1., 1.],
+    'batches_per_iter': 16,
+    'base_lr': 1e-3,
     'transform': None
 }
 
