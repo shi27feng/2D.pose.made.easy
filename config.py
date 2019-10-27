@@ -33,6 +33,8 @@ keypoint_names = ['nose', 'neck',
                   'r_eye', 'l_eye',
                   'r_ear', 'l_ear']  # 18 joints, 'neck' is computed by 'l_sho' and 'r_sho'
 
+# copy from light-weight open-pose
+# https://github.com/Daniil-Osokin/lightweight-human-pose-estimation.pytorch/blob/master/modules/pose.py
 sigmas = np.array([.26, .79,
                    .79, .72, .62, .79, .72, .62,
                    1.07, .87, .89, 1.07, .87, .89,
