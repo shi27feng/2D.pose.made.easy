@@ -20,6 +20,7 @@ def train(cfg_trn, cfg_vld):
     batches_per_iter = cfg_trn['batches_per_iter']
     log_after = cfg_trn['log_after']
     checkpoint_after = cfg_trn['checkpoint_after']
+
     val_after = cfg_vld['val_after']
     val_labels = cfg_vld['annF']
     val_output_name = cfg_vld['']
