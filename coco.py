@@ -58,5 +58,8 @@ class CocoDataset(data.Dataset):
     def __len__(self):
         return len(self.annotations)
 
-    def _mask(self, segmentation, ):
-        return
+
+def evaluate(val_labels, val_output_name, val_images_folder, net):
+    return
+
+
