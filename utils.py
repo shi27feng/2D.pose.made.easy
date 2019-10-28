@@ -184,3 +184,22 @@ def prepare_annotations(cfg):
     with open(cfg['annP'], 'wb') as f:
         pickle.dump(prepared_ann_records, f)
     return prepared_ann_records
+
+
+def normalize_image(img, mean, scale):
+    return np.multiply(np.array(img, dtype=np.float32) - mean, scale)
+
+
+def pad_image(img, pad_value, min_dims, stride=1.):
+    h, w, _ = img.shape
+    h = min(min_dims[0], h)
+    min_dims[1] = max(min_dims[1], w)
+    min_dims = min_dims if stride == 1. else min_dims // stride + 1
+    top = (min_dims[0] - h) // 2,
+    left = (min_dims[1] - w) // 2,
+    bottom = min_dims[0] - h - top
+    right = min_dims[1] - w - left
+    padded_img = cv2.copyMakeBorder(img, top=top, left=left, bottom=bottom, right=right,
+                                    borderType=cv2.BORDER_CONSTANT, value=pad_value)
+    return padded_img, [top, left, bottom, right]
+
