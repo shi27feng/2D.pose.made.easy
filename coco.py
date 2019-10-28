@@ -59,7 +59,15 @@ class CocoDataset(data.Dataset):
         return len(self.annotations)
 
 
-def evaluate(val_labels, val_output_name, val_images_folder, net):
+def evaluate(net,
+             annotations,
+             configuration,
+             multi_scale=False,
+             visualize=False):
+
     return
 
 
+def inference(net, img, scales):
+    
+    return
