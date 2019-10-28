@@ -86,7 +86,7 @@ def _make_all_in_one_keypoints_map(keypoints,
 
     heatmap = np.zeros((hm_height, hm_width), dtype=np.float32)
 
-    for j in range(keypoints.shape[0]):
+    for j in range(len(keypoints)):  # 'keypoints' is list of lists
         people = keypoints[j]
         for i in range(num_parts):
             if people[i * 3 + 2] == 0:  # 0 = not labeled, 1 = labeled not visible

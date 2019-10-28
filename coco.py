@@ -50,7 +50,7 @@ class CocoDataset(data.Dataset):
                                                 ann['img_height'], ann['img_width'],
                                                 ann['img_height'] / self.scales[0], ann['img_width'] / self.scales[1],
                                                 sigmas=self.sigmas,  # TODO
-                                                num_parts=18)
+                                                num_parts=len(ann['keypoints'][0]))
             sample['mask'] = mask
             sample['keypoint_map'] = hm
         return sample
