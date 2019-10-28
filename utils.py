@@ -97,8 +97,6 @@ def _make_all_in_one_keypoints_map(keypoints,
                 heatmap = _add_gaussian(heatmap, center_x, center_y, sigma=sigmas[i])
             else:
                 continue
-    # TODO add neck keypoint
-
     return heatmap
 
 
@@ -106,7 +104,6 @@ def _add_gaussian(heatmap, center_x, center_y, sigma=1.):
     # sigma = 1.0, radius = 3.5px
     # sigma = 2.0, radius = 6.5px
     # sigma = 0.5, radius = 2.0px
-
     threshold = 4.6052
     delta = math.sqrt(threshold * 2)
 
