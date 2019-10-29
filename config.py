@@ -11,7 +11,7 @@ train_config = {
     'num_workers': 8,
     'num_stacks': 2,
     'num_blocks': 1,
-    'num_classes': 17 + 1,  # 1 for neck or center
+    'num_classes': 17 + 1,  # 1 for neck or 2 for both neck and torso
     'log_after': 100,
     'checkpoints_folder': "checkpoints",
     'checkpoints_after': 5000,
