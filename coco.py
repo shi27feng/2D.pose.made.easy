@@ -65,18 +65,12 @@ def evaluate(net,
              configuration,
              multi_scale=False,
              visualize=False):
-
+    # TODO use pycocotools.evaluate to analyze
     return
 
 
-def inference(net,
-              img,
-              scales,
-              base_height,
-              stride,
-              pad_value=(0, 0, 0),
-              mean_img=(128, 128, 128),
-              img_scale=1/256):
+def inference(net, img, scales, base_height, stride,
+              pad_value=(0, 0, 0), mean_img=(128, 128, 128), img_scale=1/256):
     normalized_img = normalize_image(img, mean_img, img_scale)
     height, width, _ = normalized_img.shape
     scales_ratios = [scale * base_height / float(height) for scale in scales]
