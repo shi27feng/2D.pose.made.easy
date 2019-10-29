@@ -137,14 +137,18 @@ def person_center(bbox, scale=(1 - 0.618)):
             bbox[1] + bbox[3] / scale]
 
 
-def _process_keypoints(keypoints):
-    kps = list(np.zeros(len(keypoints) + 3))
+def _process_keypoints(keypoints, bbox=None):
+    slots = 1 if (bbox is None) else 2
+    kps = list(np.zeros(len(keypoints) + 3 * slots))
     kps[-len(keypoints):] = keypoints
     kps[0: 3] = keypoints[0: 3]  # put nose at beginning
     # add neck
     kps[3: 6] = [(keypoints[3] + keypoints[12])/2,
                  (keypoints[4] + keypoints[13])/2,
                  2 if keypoints[5] == 2 and keypoints[14] == 2 else 0]
+    if bbox is not None:
+        kps[3 * slots: 3 * (slots + 1)] = [bbox[0] + bbox[2] * (1 - 0.618),
+                                           bbox[1] + bbox[3] * (1 - 0.618), 2]
     return kps
 
 

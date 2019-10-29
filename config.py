@@ -27,7 +27,7 @@ valid_config = {
     'transform': False
 }
 
-keypoint_names = ['nose', 'neck',
+keypoint_names = ['nose', 'neck',   # 'torso'
                   'r_sho', 'r_elb', 'r_wri', 'l_sho', 'l_elb', 'l_wri',
                   'r_hip', 'r_knee', 'r_ank', 'l_hip', 'l_knee', 'l_ank',
                   'r_eye', 'l_eye',
@@ -35,7 +35,7 @@ keypoint_names = ['nose', 'neck',
 
 # copy from light-weight open-pose
 # https://github.com/Daniil-Osokin/lightweight-human-pose-estimation.pytorch/blob/master/modules/pose.py
-sigmas = np.array([.26, .79,
+sigmas = np.array([.26, .79,   # '1.1'
                    .79, .72, .62, .79, .72, .62,
                    1.07, .87, .89, 1.07, .87, .89,
                    .25, .25,
