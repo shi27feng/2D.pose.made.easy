@@ -9,7 +9,7 @@ except ImportError:
 import cv2
 import torch
 import torch.utils.data as data
-from utils import prepare_annotations, _make_all_in_one_keypoints_map, _make_mask, normalize_image, pad_image
+from utils import prepare_annotations, _make_all_in_one_keypoints_map, normalize_image, pad_image
 
 
 class CocoDataset(data.Dataset):
@@ -42,7 +42,7 @@ class CocoDataset(data.Dataset):
             'image': img.transpose((2, 0, 1)),  # why transpose?
         }
         if self.is_train:
-            mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
+            # mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
             # if self.transforms is not None:
             #     img, target = self.transforms(img, target)
 
@@ -52,7 +52,7 @@ class CocoDataset(data.Dataset):
                                                 ann['img_height'] / self.scales[0], ann['img_width'] / self.scales[1],
                                                 sigmas=self.sigmas,  # TODO
                                                 num_parts=len(ann['keypoints'][0]))
-            sample['mask'] = mask
+            # sample['mask'] = mask
             sample['keypoint_map'] = hm
         return sample
 
