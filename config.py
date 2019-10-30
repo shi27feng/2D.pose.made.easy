@@ -17,7 +17,7 @@ sigmas = np.array([.26, .79,
                    .25, .25,
                    .35, .35,
                    1.1],
-                  dtype=np.float32)   # / 10.0
+                  dtype=np.float32) / 10.0
 
 parent_keypoint = [1, 18,
                    1, 2, 3, 1, 5, 6,
