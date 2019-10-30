@@ -124,10 +124,10 @@ def train(cfg_trn, cfg_vld):
                             'iter': num_iter,
                             'current_epoch': epochId},
                            snapshot_name)
-            if num_iter % val_after == 0:
-                print('Validation...')
-                evaluate(val_labels, val_output_name, val_images_folder, net)
-                net.train()
+            # if num_iter % val_after == 0:
+            #     print('Validation...')
+            #     evaluate(val_labels, val_output_name, val_images_folder, net)
+            #     net.train()
 
 
 if __name__ == '__main__':

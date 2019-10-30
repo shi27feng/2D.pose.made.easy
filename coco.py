@@ -9,7 +9,7 @@ except ImportError:
 import cv2
 import torch
 import torch.utils.data as data
-from utils import prepare_annotations, _make_all_in_one_keypoints_map, normalize_image, pad_image
+from utils import prepare_annotations, _make_maps, normalize_image, pad_image
 
 
 class CocoDataset(data.Dataset):
@@ -28,9 +28,8 @@ class CocoDataset(data.Dataset):
 
     def __getitem__(self, index):
         """
-
         :param index: int
-        :return: dict{image, feature_maps}
+        :return: dict{image, annotations, heat_map, depth_map, offset_map}
         """
         ann = self.annotations[index]
         path = ann['file_name']
@@ -42,18 +41,19 @@ class CocoDataset(data.Dataset):
             'image': img.transpose((2, 0, 1)),  # why transpose?
         }
         if self.is_train:
-            # mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
+            # TODO mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
+            # TODO transformation of images
             # if self.transforms is not None:
             #     img, target = self.transforms(img, target)
-
-            # TODO: add codes for creating heatmaps of training image
-            hm = _make_all_in_one_keypoints_map(ann['keypoints'],
-                                                ann['img_height'], ann['img_width'],
-                                                ann['img_height'] / self.scales[0], ann['img_width'] / self.scales[1],
-                                                sigmas=self.sigmas,  # TODO
-                                                num_parts=len(ann['keypoints'][0]))
-            # sample['mask'] = mask
+            hm, dm, om = _make_maps(ann['keypoints'],
+                                    ann['img_height'], ann['img_width'],
+                                    ann['img_height'] / self.scales[0], ann['img_width'] / self.scales[1],
+                                    sigmas=self.sigmas,
+                                    num_parts=len(ann['keypoints'][0]))
+            # TODO sample['mask'] = mask
             sample['keypoint_map'] = hm
+            sample['depth_map'] = dm
+            sample['offset_map'] = om
         return sample
 
     def __len__(self):
@@ -70,7 +70,7 @@ def evaluate(net,
 
 
 def inference(net, img, scales, base_height, stride,
-              pad_value=(0, 0, 0), mean_img=(128, 128, 128), img_scale=1/256):
+              pad_value=(0, 0, 0), mean_img=(128, 128, 128), img_scale=1 / 256):
     normalized_img = normalize_image(img, mean_img, img_scale)
     height, width, _ = normalized_img.shape
     scales_ratios = [scale * base_height / float(height) for scale in scales]
@@ -85,7 +85,7 @@ def inference(net, img, scales, base_height, stride,
         _ft_maps = np.transpose(_ft_maps.squeeze().cpu().data.numpy(), (1, 2, 0))
         _ft_maps = cv2.resize(_ft_maps, (0, 0), fx=stride, fy=stride, interpolation=cv2.INTER_CUBIC)
         _ft_maps = _ft_maps[pad[0]: _ft_maps.shape[0] - pad[2],
-                            pad[1]: _ft_maps.shape[1] - pad[3]:, :]
+                   pad[1]: _ft_maps.shape[1] - pad[3]:, :]
         _ft_maps = cv2.resize(_ft_maps, (width, height), interpolation=cv2.INTER_CUBIC)
         avg_ft_map = avg_ft_map + _ft_maps / len(scales_ratios)
 

@@ -48,7 +48,7 @@ def _make_maps(keypoints, bboxes, sigmas, parents,
 
     hms = np.zeros((hm_height, hm_width, num_parts), dtype=np.float32)
     dms = np.zeros((hm_height, hm_width, num_parts), dtype=np.float32)
-    oms = np.zeros((hm_height, hm_width, num_parts), dtype=np.float32)
+    oms = np.zeros((hm_height, hm_width, num_parts * 2), dtype=np.float32)
 
     for i in range(num_parts):
         hm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)  # heat maps
@@ -69,32 +69,34 @@ def _make_maps(keypoints, bboxes, sigmas, parents,
                 continue
         hms[:, :, i] = hm
         dms[:, :, i] = dm
-        oms[:, :, i] = om
-    return [np.sum(hms, axis=2), np.sum(dms, axis=2), np.sum(oms, axis=2)]
+        oms[:, :, i: i+2] = om
+    oms[:, :, 0] = np.sum(oms[:, :, 0:2:], axis=2)
+    oms[:, :, 1] = np.sum(oms[:, :, 1:2:], axis=2)
+    return np.sum(hms, axis=2), np.sum(dms, axis=2), oms[0:2]
 
 
-def _make_all_in_one_keypoints_map(keypoints,
-                                   im_height, im_width,
-                                   hm_height, hm_width,
-                                   sigmas,
-                                   num_parts=19):
-    x_scale = hm_width / im_width
-    y_scale = hm_height / im_height
-
-    heatmap = np.zeros((hm_height, hm_width), dtype=np.float32)
-
-    for j in range(len(keypoints)):  # 'keypoints' is list of lists
-        people = keypoints[j]
-        for i in range(num_parts):
-            if people[i * 3 + 2] == 0:  # 0 = not labeled, 1 = labeled not visible
-                continue
-            center_x = people[i * 3] * x_scale
-            center_y = people[i * 3 + 1] * y_scale
-            if 0 < center_x < hm_width and 0 < center_y < hm_height:
-                _add_gaussian(heatmap, center_x, center_y, sigma=sigmas[i])
-            else:
-                continue
-    return heatmap
+# def _make_all_in_one_keypoints_map(keypoints,
+#                                    im_height, im_width,
+#                                    hm_height, hm_width,
+#                                    sigmas,
+#                                    num_parts=19):
+#     x_scale = hm_width / im_width
+#     y_scale = hm_height / im_height
+#
+#     heatmap = np.zeros((hm_height, hm_width), dtype=np.float32)
+#
+#     for j in range(len(keypoints)):  # 'keypoints' is list of lists
+#         people = keypoints[j]
+#         for i in range(num_parts):
+#             if people[i * 3 + 2] == 0:  # 0 = not labeled, 1 = labeled not visible
+#                 continue
+#             center_x = people[i * 3] * x_scale
+#             center_y = people[i * 3 + 1] * y_scale
+#             if 0 < center_x < hm_width and 0 < center_y < hm_height:
+#                 _add_gaussian(heatmap, center_x, center_y, sigma=sigmas[i])
+#             else:
+#                 continue
+#     return heatmap
 
 
 def _get_region(height, width, center_x, center_y, sigma, threshold):

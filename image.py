@@ -4,6 +4,10 @@ except ImportError:
     import numpy as np
 
 
+def visualize():
+    return
+
+
 class Transform(object):
     def __init__(self, probability):
         self._probability = probability
