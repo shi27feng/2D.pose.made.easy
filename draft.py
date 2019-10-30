@@ -1,8 +1,12 @@
+import numpy as np
+
+
 def _generate_keypoint_maps(self, sample, sigmas: list, skeleton: dict):
     n_keypoints = 18
     n_rows, n_cols, _ = sample['image'].shape
     keypoint_maps = np.zeros(shape=(n_keypoints + 1,
-                                    n_rows // self._stride, n_cols // self._stride), dtype=np.float32)  # +1 for bg
+                                    n_rows // self._stride,
+                                    n_cols // self._stride), dtype=np.float32)  # +1 for bg
 
     label = sample['label']
     for keypoint_idx in range(n_keypoints):
