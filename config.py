@@ -44,7 +44,7 @@ sigmas = np.array([.26, .79,
                    1.1],
                   dtype=np.float32) / 10.0
 
-parents = []
+parents = []  # Todo
 
 # radius ratio to bbox
 # joint_sigmas = {
