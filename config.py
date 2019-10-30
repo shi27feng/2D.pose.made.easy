@@ -17,14 +17,14 @@ sigmas = np.array([.26, .79,
                    .25, .25,
                    .35, .35,
                    1.1],
-                  dtype=np.float32) / 10.0
+                  dtype=np.float32)   # / 10.0
 
 parent_keypoint = [1, 18,
                    1, 2, 3, 1, 5, 6,
                    18, 8, 9, 18, 11, 12,
                    0, 0,
                    14, 15,
-                   18]  # Todo
+                   18]
 
 train_config = {
     'root': os.path.join(os.path.expanduser('~'), "Datasets/coco/train2017"),
