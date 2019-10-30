@@ -1,4 +1,5 @@
 import os
+
 import numpy as np
 
 train_config = {
@@ -15,6 +16,7 @@ train_config = {
     'log_after': 100,
     'checkpoints_folder': "checkpoints",
     'checkpoints_after': 5000,
+    'loss_alphas': (1., 1., 1.),
     'transform': None
 }
 
@@ -27,12 +29,19 @@ valid_config = {
     'transform': False
 }
 
-keypoint_names = ['nose', 'neck',   # 'torso'
+keypoint_names = ['nose', 'neck',  # 'torso'
                   'r_sho', 'r_elb', 'r_wri', 'l_sho', 'l_elb', 'l_wri',
                   'r_hip', 'r_knee', 'r_ank', 'l_hip', 'l_knee', 'l_ank',
                   'r_eye', 'l_eye',
                   'r_ear', 'l_ear',
                   'torso']  # 19 joints, 'neck' is computed by 'l_sho' and 'r_sho'
+
+parent_keypoint = [1, 18,
+                   1, 2, 3, 1, 5, 6,
+                   18, 8, 9, 18, 11, 12,
+                   0, 0,
+                   14, 15,
+                   18]  # Todo
 
 # copy from light-weight open-pose
 # https://github.com/Daniil-Osokin/lightweight-human-pose-estimation.pytorch/blob/master/modules/pose.py
@@ -43,27 +52,3 @@ sigmas = np.array([.26, .79,
                    .35, .35,
                    1.1],
                   dtype=np.float32) / 10.0
-
-parents = []  # Todo
-
-# radius ratio to bbox
-# joint_sigmas = {
-#     0: 5.,  # 'nose',
-#     1: 5.,  # 'neck',
-#     2: 5.,  # 'r_sho',
-#     3: 5.,  # 'r_elb',
-#     4: 5.,  # 'r_wri',
-#     5: 5.,  # 'l_sho',
-#     6: 5.,  # 'l_elb',
-#     7: 5.,  # 'l_wri',
-#     8: 5.,  # 'r_hip',
-#     9: 5.,  # 'r_knee',
-#     10: 5.,  # 'r_ank',
-#     11: 5.,  # 'l_hip',
-#     12: 5.,  # 'l_knee',
-#     13: 5.,  # 'l_ank',
-#     14: 5.,  # 'r_eye',
-#     15: 5.,  # 'l_eye',
-#     16: 5.,  # 'r_ear',
-#     17: 5.,  # 'l_ear'
-# }

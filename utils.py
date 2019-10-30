@@ -29,6 +29,13 @@ def _calculate_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
 
 def _calculate_offset(offset_map, region, parent_y, parent_x):
     y0, y1, x0, x1 = region
+    x_vec = np.power(np.subtract(np.arange(x0, x1), parent_x), 2)
+    y_vec = np.power(np.subtract(np.arange(y0, y1), parent_y), 2)
+    xv, yv = np.meshgrid(x_vec, y_vec)
+    dist = np.sqrt(xv + yv)  # sqrt(y^2 + x^2)
+    xv = np.divide(xv, dist)  # normalize x
+    yv = np.divide(yv, dist)  # normalize y
+    offset_map[y0: y1, x0: x1, 0]
     return
 
 
@@ -43,9 +50,9 @@ def _make_maps(keypoints, bboxes, sigmas, parents,
     oms = np.zeros((hm_height, hm_width, num_parts), dtype=np.float32)
 
     for i in range(num_parts):
-        hm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)
-        dm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)
-        om = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)
+        hm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)  # heat maps
+        dm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)  # depth maps
+        om = np.zeros(shape=(hm_height, hm_width, 2), dtype=np.float32)  # offset maps
         for j in range(len(keypoints)):  # 'keypoints' is list of lists
             people = keypoints[j]
             bbox = bboxes[j]
@@ -88,18 +95,21 @@ def _make_all_in_one_keypoints_map(keypoints,
     return heatmap
 
 
-def _add_gaussian(heatmap, center_x, center_y, sigma=1., threshold=4.605):
+def _get_region(height, width, center_x, center_y, sigma, threshold):
     # [sigma, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
     delta = math.sqrt(threshold * 2)
-    height, width = heatmap.shape
-
     # top-left corner
     x0 = int(max(0, center_x - delta * sigma + 0.5))
     y0 = int(max(0, center_y - delta * sigma + 0.5))
     # bottom-right corner
     x1 = int(min(width - 1, center_x + delta * sigma + 0.5)) + 1
     y1 = int(min(height - 1, center_y + delta * sigma + 0.5)) + 1
+    return y0, y1, x0, x1
 
+
+def _add_gaussian(heatmap, center_x, center_y, sigma=1., threshold=4.605):
+    height, width = heatmap.shape
+    y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, sigma, threshold)
     # fast way
     heat_area = heatmap[y0: y1, x0: x1]
     factor = 1 / 2.0 / sigma / sigma
