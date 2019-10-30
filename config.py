@@ -42,6 +42,7 @@ train_config = {
     'checkpoints_after': 5000,
     'loss_alphas': (1., 1., 1.),
     'sigmas': sigmas,
+    'parent': parent_keypoint,
     'transform': None
 }
 

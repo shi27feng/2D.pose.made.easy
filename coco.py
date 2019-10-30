@@ -18,6 +18,7 @@ class CocoDataset(data.Dataset):
         self.is_train = is_train
         self.scales = cfg['scales']
         self.sigmas = cfg['sigmas']
+        self.parent = cfg['parent']
         if os.path.exists(cfg['annP']):
             import pickle
             with open(cfg['annP'], 'rb') as f:
@@ -45,10 +46,11 @@ class CocoDataset(data.Dataset):
             # TODO transformation of images
             # if self.transforms is not None:
             #     img, target = self.transforms(img, target)
-            hm, dm, om = _make_maps(ann['keypoints'],
+            hm, dm, om = _make_maps(ann['keypoints'], ann['bbox'],
                                     ann['img_height'], ann['img_width'],
                                     ann['img_height'] / self.scales[0], ann['img_width'] / self.scales[1],
                                     sigmas=self.sigmas,
+                                    parent=self.parent,
                                     num_parts=len(ann['keypoints'][0]))
             # TODO sample['mask'] = mask
             sample['keypoint_map'] = hm

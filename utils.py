@@ -40,10 +40,11 @@ def _calculate_offset(offset_map, region, parent_y, parent_x):
     return
 
 
-def _make_maps(keypoints, bboxes, sigmas, parents,
+def _make_maps(keypoints, bboxes,
                im_height, im_width,
                hm_height, hm_width,
-               num_parts=19, _visualize=None):
+               sigmas, parent,
+               num_parts=19):
     x_scale, y_scale = hm_width / im_width, hm_height / im_height
 
     hms = np.zeros((hm_height, hm_width, num_parts), dtype=np.float32)
@@ -64,7 +65,7 @@ def _make_maps(keypoints, bboxes, sigmas, parents,
             if 0 < center_x < hm_width and 0 < center_y < hm_height:
                 y0, y1, x0, x1 = _add_gaussian(hm, center_x, center_y, sigma=sigmas[i])
                 _calculate_radius(dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i])
-                _calculate_offset(om, (y0, y1, x0, x1), people[parents[j] * 3], people[parents[j] * 3 + 1])
+                _calculate_offset(om, (y0, y1, x0, x1), people[parent[j] * 3], people[parent[j] * 3 + 1])
             else:
                 continue
         hms[:, :, i] = hm
