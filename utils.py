@@ -35,7 +35,8 @@ def _calculate_offset(offset_map, region, parent_y, parent_x):
     dist = np.sqrt(xv + yv)  # sqrt(y^2 + x^2)
     xv = np.divide(xv, dist)  # normalize x
     yv = np.divide(yv, dist)  # normalize y
-    offset_map[y0: y1, x0: x1, 0]
+    offset_map[y0: y1, x0: x1, 0] = xv
+    offset_map[y0: y1, x0: x1, 1] = yv
     return
 
 
@@ -68,6 +69,7 @@ def _make_maps(keypoints, bboxes, sigmas, parents,
                 continue
         hms[:, :, i] = hm
         dms[:, :, i] = dm
+        oms[:, :, i] = om
     return [np.sum(hms, axis=2), np.sum(dms, axis=2), np.sum(oms, axis=2)]
 
 
@@ -129,16 +131,17 @@ def person_center(bbox, scale=(1 - 0.618)):  # bbox = [y, x, h, w]
             bbox[1] + bbox[3] / scale]
 
 
-def _process_keypoints(keypoints, bbox=None):
+def _process_keypoints(keypoints, bbox=None, scale=(1 - 0.618)):
     kps = [0] * 3 + keypoints
     kps[0: 3] = keypoints[0: 3]  # put nose at beginning
     # add neck
     kps[3: 6] = [(keypoints[3] + keypoints[12]) / 2,
                  (keypoints[4] + keypoints[13]) / 2,
                  2 if keypoints[5] == 2 and keypoints[14] == 2 else 0]
-    if bbox is not None:  # add torso, bbox = [y, x, h, w]
-        kps += [bbox[0] + bbox[2] * (1 - 0.618),
-                bbox[1] + bbox[3] * (1 - 0.618), 2]
+    # add torso: bbox = [y, x, h, w]
+    if bbox is not None:
+        kps += [bbox[0] + bbox[2] * scale,
+                bbox[1] + bbox[3] * scale, 2]
     return kps
 
 
