@@ -138,13 +138,12 @@ def _process_keypoints(keypoints, bbox=None, scale=(1 - 0.618)):
     kps = [0] * 3 + keypoints
     kps[0: 3] = keypoints[0: 3]  # put nose at beginning
     # add neck
-    kps[3: 6] = [(keypoints[3] + keypoints[12]) / 2,
-                 (keypoints[4] + keypoints[13]) / 2,
+    kps[3: 6] = [math.ceil((keypoints[3] + keypoints[12]) / 2),
+                 math.ceil((keypoints[4] + keypoints[13]) / 2),
                  2 if keypoints[5] == 2 and keypoints[14] == 2 else 0]
     # add torso: bbox = [y, x, h, w]
     if bbox is not None:
-        kps += [bbox[0] + bbox[2] * scale,
-                bbox[1] + bbox[3] * scale, 2]
+        kps += person_center(bbox, scale=scale) + [2]
     return kps
 
 
