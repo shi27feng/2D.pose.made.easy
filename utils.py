@@ -130,8 +130,8 @@ def _add_gaussian(heatmap, center_x, center_y, sigma=1., threshold=4.605):
 
 
 def person_center(bbox, scale=(1 - 0.618)):  # bbox = [y, x, h, w]
-    return [bbox[0] + bbox[2] / scale,
-            bbox[1] + bbox[3] / scale]
+    return [bbox[0] + bbox[2] * scale,
+            bbox[1] + bbox[3] * scale]
 
 
 def _process_keypoints(keypoints, bbox=None, scale=(1 - 0.618)):

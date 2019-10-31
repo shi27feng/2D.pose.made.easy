@@ -33,7 +33,7 @@ class CocoDataset(data.Dataset):
         :return: dict{image, annotations, heat_map, depth_map, offset_map}
         """
         ann = self.annotations[index]
-        path = ann['file_name']
+        path = ann['img_path']
 
         img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
         img = (img.astype(np.float32) - 128) / 256
