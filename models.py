@@ -2,39 +2,74 @@
 Hourglass network inserted in the pre-activated Resnet
 Use lr=0.01 for current version
 inspired by:
-https://github.com/bearpaw/pytorch-pose/blob/master/pose/models/hourglass.py
+Hourglass: https://github.com/bearpaw/pytorch-pose/blob/master/pose/models/hourglass.py
+ResNet: https://github.com/bearpaw/pytorch-pose/blob/master/pose/models/pose_resnet.py
 """
 import torch.nn as nn
 import torch.nn.functional as func
+from torchvision.models.resnet import BasicBlock, Bottleneck
 
-__all__ = ['HourglassNet', 'Bottleneck']
+# __all__ = ['BasicBlock', 'Bottleneck', 'ResNet', 'HourglassNet', 'Bottleneck']
 
 
-class Bottleneck(nn.Module):
-    expansion = 2
+ResNet_Spec = {
+    18: {"block": BasicBlock,
+         "blocks": [2, 2, 2, 2],
+         "channels": [64, 64, 128, 256, 512],
+         "name": 'ResNet18'},
+    34: {"block": BasicBlock,
+         "blocks": [3, 4, 6, 3],
+         "channels": [64, 64, 128, 256, 512],
+         "name": 'ResNet34'},
+    # 50: (Bottleneck, [3, 4, 6, 3], [64, 256, 512, 1024, 2048], 'resnet50'),
+    # 101: (Bottleneck, [3, 4, 23, 3], [64, 256, 512, 1024, 2048], 'resnet101'),
+    # 152: (Bottleneck, [3, 8, 36, 3], [64, 256, 512, 1024, 2048], 'resnet152')
+}
 
-    def __init__(self, num_in_channels, planes, stride=1, down_sample=None):
-        super(Bottleneck, self).__init__()
 
+# ResNet 18 for backbone network
+class ResNet(nn.Module):
+    def __init__(self, cfg, in_channels=3):
+        self.inplanes = 64  # what's this for?
+        super(ResNet, self).__init__()
         self.layers = [
-            nn.BatchNorm2d(num_in_channels),
-            nn.Conv2d(num_in_channels, planes, kernel_size=1, bias=True),
-            nn.BatchNorm2d(planes),
-            nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=True),
-            nn.BatchNorm2d(planes),
-            nn.Conv2d(planes, planes * 2, kernel_size=1, bias=True),
+            nn.Conv2d(self.in_channels, 64, kernel_size=7, stride=1, padding=3, bias=False),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True)]
-        self.down_sample = down_sample
-        self.stride = stride
+        offset = len(cfg['channels']) - len(cfg['blocks'])
+        for i in range(len(cfg['layers'])):
+            self.layers.append(self._make_layer(cfg['block'],
+                                                cfg['channels'][offset + i],
+                                                cfg['blocks'][i]))
+        self._initialize()
+
+    def _make_layer(self, block, planes, blocks, stride=1):
+        down_sample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            down_sample = nn.Sequential(
+                nn.Conv2d(self.inplanes, planes * block.expansion,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes * block.expansion),
+            )
+        layers = [block(self.inplanes, planes, stride, down_sample)]
+        self.inplanes = planes * block.expansion
+        for i in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
+        return nn.Sequential(*layers)
+
+    def _initialize(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, mean=0, std=0.001)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        residual = x
         net = x
         for layer in self.layers:
-            net = layer(net)
-        if self.down_sample is not None:
-            residual = self.down_sample(x)
-        net += residual
+            net = layer(x)
+
         return net
 
 
