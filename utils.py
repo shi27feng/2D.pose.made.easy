@@ -163,7 +163,7 @@ def prepare_annotations(cfg):
         annotations_img = ann_records[im['id']]
         record = {
             'img_id': im['id'], 'img_path': im['file_name'],
-            'img_width': im['width'], 'img_weight': im['height'],
+            'img_width': im['width'], 'img_height': im['height'],
             'person_center': []
         }
         b_boxes = []
