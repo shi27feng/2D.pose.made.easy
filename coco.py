@@ -52,7 +52,7 @@ class CocoDataset(data.Dataset):
                                     math.ceil(ann['img_width'] / self.scales[1]),
                                     sigmas=self.sigmas,
                                     parent=self.parent,
-                                    num_parts=len(ann['keypoints'][0]))
+                                    num_parts=(len(ann['keypoints'][0]) // 3))
             # TODO sample['mask'] = mask
             sample['keypoint_map'] = hm
             sample['depth_map'] = dm
