@@ -1,6 +1,6 @@
 # COCO Dataset
 import os
-
+import math
 try:
     import cupy as np
 except ImportError:
@@ -48,7 +48,8 @@ class CocoDataset(data.Dataset):
             #     img, target = self.transforms(img, target)
             hm, dm, om = _make_maps(ann['keypoints'], ann['bbox'],
                                     ann['img_height'], ann['img_width'],
-                                    ann['img_height'] / self.scales[0], ann['img_width'] / self.scales[1],
+                                    math.ceil(ann['img_height'] / self.scales[0]),
+                                    math.ceil(ann['img_width'] / self.scales[1]),
                                     sigmas=self.sigmas,
                                     parent=self.parent,
                                     num_parts=len(ann['keypoints'][0]))
