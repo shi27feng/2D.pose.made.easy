@@ -20,7 +20,7 @@ def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
     return mask
 
 
-# hm, (y0, y1, x0, x1), bbox, sigma=sigmas[i]
+# format: dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i]
 def _calculate_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
     y0, y1, x0, x1 = region
     area = np.prod(np.array(bbox[2:])) * sigma

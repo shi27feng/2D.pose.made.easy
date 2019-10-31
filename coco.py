@@ -36,7 +36,7 @@ class CocoDataset(data.Dataset):
         path = ann['img_path']
 
         img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
-        img = (img.astype(np.float32) - 128) / 256
+        img = (img.astype(np.float32) - 128) / 256   # normalize image
         sample = {
             'annotation': ann,
             'image': img.transpose((2, 0, 1)),  # why transpose?
