@@ -3,14 +3,16 @@ Hourglass network inserted in the pre-activated Resnet
 Use lr=0.01 for current version
 inspired by:
 Hourglass: https://github.com/bearpaw/pytorch-pose/blob/master/pose/models/hourglass.py
-ResNet: https://github.com/bearpaw/pytorch-pose/blob/master/pose/models/pose_resnet.py
+ResNet:    https://github.com/bearpaw/pytorch-pose/blob/master/pose/models/pose_resnet.py
 """
 import torch.nn as nn
 import torch.nn.functional as func
 from torchvision.models.resnet import BasicBlock, Bottleneck
 
 # __all__ = ['BasicBlock', 'Bottleneck', 'ResNet', 'HourglassNet', 'Bottleneck']
-
+"""
+ResNet Architecture for 2D human pose estimation
+"""
 
 ResNet_Spec = {
     18: {"block": BasicBlock,
@@ -32,15 +34,15 @@ class ResNet(nn.Module):
     def __init__(self, cfg, in_channels=3):
         self.inplanes = 64  # what's this for?
         super(ResNet, self).__init__()
-        self.layers = [
-            nn.Conv2d(self.in_channels, 64, kernel_size=7, stride=1, padding=3, bias=False),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True)]
+        self.layers = [nn.Conv2d(in_channels, 64, kernel_size=7, stride=1, padding=3, bias=False),
+                       nn.BatchNorm2d(64),
+                       nn.ReLU(inplace=True)]
         offset = len(cfg['channels']) - len(cfg['blocks'])
         for i in range(len(cfg['layers'])):
             self.layers.append(self._make_layer(cfg['block'],
                                                 cfg['channels'][offset + i],
-                                                cfg['blocks'][i]))
+                                                cfg['blocks'][i],
+                                                stride=2))
         self._initialize()
 
     def _make_layer(self, block, planes, blocks, stride=1):
@@ -49,10 +51,12 @@ class ResNet(nn.Module):
             down_sample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
-        layers = [block(self.inplanes, planes, stride, down_sample)]
+                nn.BatchNorm2d(planes * block.expansion))
+
+        # layers = [block(self.inplanes, planes, stride, down_sample)]
+        layers = [block(self.inplanes, planes, down_sample)]
         self.inplanes = planes * block.expansion
+
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
@@ -71,6 +75,11 @@ class ResNet(nn.Module):
             net = layer(x)
 
         return net
+
+
+"""
+Hourglass Architecture for 2D human pose estimation
+"""
 
 
 def _make_residual(block, num_blocks, planes):
