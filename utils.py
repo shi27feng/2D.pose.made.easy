@@ -58,13 +58,14 @@ def _make_maps(keypoints, bboxes,
         for j in range(len(keypoints)):  # 'keypoints' is list of lists
             people = keypoints[j]
             bbox = bboxes[j]
+            bbox = [bbox[0] * y_scale, bbox[1] * x_scale, bbox[2] * y_scale, bbox[3] * x_scale]
             # 0 = not labeled, 1 = labeled not visible
             if people[i * 3 + 2] == 0 or people[i * 3 + 2] == 1:
                 continue
             center_x, center_y = people[i * 3] * x_scale, people[i * 3 + 1] * y_scale
             if 0 < center_x < hm_width and 0 < center_y < hm_height:
                 y0, y1, x0, x1 = _get_region_2(hm_height, hm_width, center_x, center_y, sigmas[i], bbox)
-                _add_gaussian_2(hm, region, center_x, center_y, sigma=sigmas[i])
+                _add_gaussian_2(hm, (y0, y1, x0, x1), center_x, center_y, sigma=sigmas[i])
                 _calculate_radius(dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i])
                 _calculate_offset(om, (y0, y1, x0, x1), people[parent[j] * 3], people[parent[j] * 3 + 1])
             else:
