@@ -70,10 +70,10 @@ def _make_maps(keypoints, bboxes,
                 continue
         hms[:, :, i] = hm
         dms[:, :, i] = dm
-        oms[:, :, i: i+2] = om
-    oms[:, :, 0] = np.sum(oms[:, :, 0:2:], axis=2)
-    oms[:, :, 1] = np.sum(oms[:, :, 1:2:], axis=2)
-    return np.sum(hms, axis=2), np.sum(dms, axis=2), oms[0:2]
+        oms[:, :, i: i + 2] = om
+    oms[:, :, 0] = np.sum(oms[:, :, 0: 2:], axis=2)
+    oms[:, :, 1] = np.sum(oms[:, :, 1: 2:], axis=2)
+    return np.sum(hms, axis=2), np.sum(dms, axis=2), oms[:, :, 0: 2]
 
 
 # def _make_all_in_one_keypoints_map(keypoints,

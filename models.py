@@ -38,7 +38,7 @@ class ResNet(nn.Module):
                        nn.BatchNorm2d(64),
                        nn.ReLU(inplace=True)]
         offset = len(cfg['channels']) - len(cfg['blocks'])
-        for i in range(len(cfg['layers'])):
+        for i in range(len(cfg['blocks'])):
             self.layers.append(self._make_layer(cfg['block'],
                                                 cfg['channels'][offset + i],
                                                 cfg['blocks'][i],
@@ -54,7 +54,7 @@ class ResNet(nn.Module):
                 nn.BatchNorm2d(planes * block.expansion))
 
         # layers = [block(self.inplanes, planes, stride, down_sample)]
-        layers = [block(self.inplanes, planes, down_sample)]
+        layers = [block(self.inplanes, planes, downsample=down_sample)]
         self.inplanes = planes * block.expansion
 
         for i in range(1, blocks):
