@@ -23,7 +23,7 @@ def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
 # format: dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i]
 def _calculate_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
     y0, y1, x0, x1 = region
-    area = np.prod(bbox[2:]) * sigma
+    area = np.prod(np.array(bbox[2:])) * sigma
     depth_map[y0: y1, x0: x1] = np.sqrt(area / np.pi)
 
 
@@ -116,7 +116,7 @@ def _get_region(height, width, center_x, center_y, sigma, threshold):
 
 def _get_region_2(im_height, im_width, center_x, center_y, sigma, bbox):
     # [sigma, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
-    radius = math.sqrt(np.prod(bbox[2:]) / np.pi) * sigma
+    radius = math.sqrt(np.array(np.prod(bbox[2:])) / np.pi) * sigma
     # top-left corner
     x0 = int(max(0, center_x - radius + 0.5))
     y0 = int(max(0, center_y - radius + 0.5))
