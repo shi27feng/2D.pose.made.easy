@@ -23,3 +23,4 @@ class Transform(object):
 
     def flip(self, sample):
         return
+

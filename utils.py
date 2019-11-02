@@ -1,11 +1,11 @@
+from __future__ import absolute_import
+
 try:
     import cupy as np
 except ImportError:
     import numpy as np
-
 import math
 import pickle
-
 import cv2
 import pycocotools.mask as mk
 
@@ -20,16 +20,16 @@ def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
     return mask
 
 
-def _get_region_2(height, width, center_x, center_y, sigma, threshold):
-    # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
-    delta = math.sqrt(threshold * 2)
-    # top-left corner
-    x0 = int(max(0, center_x - delta * sigma + 0.5))
-    y0 = int(max(0, center_y - delta * sigma + 0.5))
-    # bottom-right corner
-    x1 = int(min(width - 1, center_x + delta * sigma + 0.5)) + 1
-    y1 = int(min(height - 1, center_y + delta * sigma + 0.5)) + 1
-    return y0, y1, x0, x1
+# def _get_region_2(height, width, center_x, center_y, sigma, threshold):
+#     # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
+#     delta = math.sqrt(threshold * 2)
+#     # top-left corner
+#     x0 = int(max(0, center_x - delta * sigma + 0.5))
+#     y0 = int(max(0, center_y - delta * sigma + 0.5))
+#     # bottom-right corner
+#     x1 = int(min(width - 1, center_x + delta * sigma + 0.5)) + 1
+#     y1 = int(min(height - 1, center_y + delta * sigma + 0.5)) + 1
+#     return y0, y1, x0, x1
 
 
 def _get_region(im_height, im_width, center_x, center_y, sigma, bbox):
@@ -79,20 +79,20 @@ def _calc_gaussian(heatmap, region, center_x, center_y, theta=2., threshold=4.60
     heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
 
 
-def _calc_gaussian_2(heatmap, center_x, center_y, theta=1., threshold=4.605):
-    height, width = heatmap.shape
-    y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, theta, threshold)
-    # fast way
-    heat_area = heatmap[y0: y1, x0: x1]
-    factor = 1 / 2.0 / theta / theta
-    x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
-    y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
-    xv, yv = np.meshgrid(x_vec, y_vec)
-    _sum = factor * (xv + yv)
-    _exp = np.exp(-_sum)
-    _exp[_sum > threshold] = 0
-    heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
-    return y0, y1, x0, x1
+# def _calc_gaussian_2(heatmap, center_x, center_y, theta=1., threshold=4.605):
+#     height, width = heatmap.shape
+#     y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, theta, threshold)
+#     # fast way
+#     heat_area = heatmap[y0: y1, x0: x1]
+#     factor = 1 / 2.0 / theta / theta
+#     x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
+#     y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
+#     xv, yv = np.meshgrid(x_vec, y_vec)
+#     _sum = factor * (xv + yv)
+#     _exp = np.exp(-_sum)
+#     _exp[_sum > threshold] = 0
+#     heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
+#     return y0, y1, x0, x1
 
 
 def _make_maps(keypoints, bboxes,
