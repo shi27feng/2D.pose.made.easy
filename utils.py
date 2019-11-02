@@ -20,7 +20,7 @@ def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
     return mask
 
 
-# format: dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i]
+# format: dm, (y0, y1, x0, x1), bbox, theta=sigmas[i]
 def _calculate_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
     y0, y1, x0, x1 = region
     area = np.prod(np.array(bbox[2:])) * sigma
@@ -29,14 +29,15 @@ def _calculate_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
 
 def _calculate_offset(offset_map, region, parent_y, parent_x):
     y0, y1, x0, x1 = region
+    x_area, y_area = offset_map[:, y0: y1, x0: x1]
     x_vec = np.power(np.subtract(np.arange(x0, x1), parent_x), 2)
     y_vec = np.power(np.subtract(np.arange(y0, y1), parent_y), 2)
     xv, yv = np.meshgrid(x_vec, y_vec)
     dist = np.sqrt(xv + yv)  # sqrt(y^2 + x^2)
     xv = np.divide(xv, dist)  # normalize x
     yv = np.divide(yv, dist)  # normalize y
-    offset_map[0, y0: y1, x0: x1] = xv
-    offset_map[1, y0: y1, x0: x1] = yv
+    offset_map[0, y0: y1, x0: x1] = np.maximum(x_area, xv)
+    offset_map[1, y0: y1, x0: x1] = np.maximum(y_area, yv)
     print(offset_map)
 
 
@@ -65,7 +66,7 @@ def _make_maps(keypoints, bboxes,
             center_x, center_y = people[i * 3] * x_scale, people[i * 3 + 1] * y_scale
             if 0 < center_x < hm_width and 0 < center_y < hm_height:
                 y0, y1, x0, x1 = _get_region_2(hm_height, hm_width, center_x, center_y, sigmas[i], bbox)
-                _add_gaussian_2(hm, (y0, y1, x0, x1), center_x, center_y, sigma=sigmas[i])
+                _add_gaussian_2(hm, (y0, y1, x0, x1), center_x, center_y)
                 _calculate_radius(dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i])
                 _calculate_offset(om, (y0, y1, x0, x1), people[parent[j] * 3], people[parent[j] * 3 + 1])
             else:
@@ -96,14 +97,14 @@ def _make_maps(keypoints, bboxes,
 #             center_x = people[i * 3] * x_scale
 #             center_y = people[i * 3 + 1] * y_scale
 #             if 0 < center_x < hm_width and 0 < center_y < hm_height:
-#                 _add_gaussian(heatmap, center_x, center_y, sigma=sigmas[i])
+#                 _add_gaussian(heatmap, center_x, center_y, theta=sigmas[i])
 #             else:
 #                 continue
 #     return heatmap
 
 
 def _get_region(height, width, center_x, center_y, sigma, threshold):
-    # [sigma, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
+    # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
     delta = math.sqrt(threshold * 2)
     # top-left corner
     x0 = int(max(0, center_x - delta * sigma + 0.5))
@@ -115,7 +116,6 @@ def _get_region(height, width, center_x, center_y, sigma, threshold):
 
 
 def _get_region_2(im_height, im_width, center_x, center_y, sigma, bbox):
-    # [sigma, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
     radius = math.sqrt(np.prod(np.array(bbox[2:])) / np.pi) * sigma
     # top-left corner
     x0 = int(max(0, center_x - radius + 0.5))
@@ -126,27 +126,28 @@ def _get_region_2(im_height, im_width, center_x, center_y, sigma, bbox):
     return y0, y1, x0, x1
 
 
-def _add_gaussian_2(heatmap, region, center_x, center_y, sigma=1., threshold=4.605):
+def _add_gaussian_2(heatmap, region, center_x, center_y, theta=2., threshold=4.605):
+    # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
     y0, y1, x0, x1 = region
     # fast way
     heat_area = heatmap[y0: y1, x0: x1]
-    factor = 1 / 2.0 / sigma / sigma
+    factor = 1 / 2.0 / theta / theta
     x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
     y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
     xv, yv = np.meshgrid(x_vec, y_vec)
     _sum = factor * (xv + yv)
     _exp = np.exp(-_sum)
     _exp[_sum > threshold] = 0
-
+    print("heat: ", _exp)
     heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
 
 
-def _add_gaussian(heatmap, center_x, center_y, sigma=1., threshold=4.605):
+def _add_gaussian(heatmap, center_x, center_y, theta=1., threshold=4.605):
     height, width = heatmap.shape
-    y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, sigma, threshold)
+    y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, theta, threshold)
     # fast way
     heat_area = heatmap[y0: y1, x0: x1]
-    factor = 1 / 2.0 / sigma / sigma
+    factor = 1 / 2.0 / theta / theta
     x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
     y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
     xv, yv = np.meshgrid(x_vec, y_vec)
