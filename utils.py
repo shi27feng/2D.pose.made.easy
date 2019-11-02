@@ -47,9 +47,9 @@ def _make_maps(keypoints, bboxes,
                num_parts=19):
     x_scale, y_scale = hm_width / im_width, hm_height / im_height
 
-    hms = np.zeros((hm_height, hm_width, num_parts), dtype=np.float32)
-    dms = np.zeros((hm_height, hm_width, num_parts), dtype=np.float32)
-    oms = np.zeros((hm_height, hm_width, num_parts * 2), dtype=np.float32)
+    hms = np.zeros((num_parts, hm_height, hm_width), dtype=np.float32)
+    dms = np.zeros((num_parts, hm_height, hm_width), dtype=np.float32)
+    oms = np.zeros((num_parts * 2, hm_height, hm_width), dtype=np.float32)
 
     for i in range(num_parts):
         hm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)  # heat maps
@@ -73,8 +73,8 @@ def _make_maps(keypoints, bboxes,
         hms[i, :, :] = hm
         dms[i, :, :] = dm
         oms[i: i + 2, :, :] = om
-    oms[0, :, :] = np.sum(oms[:, :, 0: 2:], axis=0)
-    oms[1, :, :] = np.sum(oms[:, :, 1: 2:], axis=0)
+    oms[0, :, :] = np.sum(oms[0: 2:, :, :], axis=0)
+    oms[1, :, :] = np.sum(oms[1: 2:, :, :], axis=0)
     return np.sum(hms, axis=0), np.sum(dms, axis=0), oms[0: 2, :, :]
 
 
