@@ -20,14 +20,37 @@ def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
     return mask
 
 
+def _get_region(height, width, center_x, center_y, sigma, threshold):
+    # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
+    delta = math.sqrt(threshold * 2)
+    # top-left corner
+    x0 = int(max(0, center_x - delta * sigma + 0.5))
+    y0 = int(max(0, center_y - delta * sigma + 0.5))
+    # bottom-right corner
+    x1 = int(min(width - 1, center_x + delta * sigma + 0.5)) + 1
+    y1 = int(min(height - 1, center_y + delta * sigma + 0.5)) + 1
+    return y0, y1, x0, x1
+
+
+def _get_region_2(im_height, im_width, center_x, center_y, sigma, bbox):
+    radius = math.sqrt(np.prod(np.array(bbox[2:])) / np.pi) * sigma
+    # top-left corner
+    x0 = int(max(0, center_x - radius + 0.5))
+    y0 = int(max(0, center_y - radius + 0.5))
+    # bottom-right corner
+    x1 = int(min(im_width - 1, center_x + radius + 0.5)) + 1
+    y1 = int(min(im_height - 1, center_y + radius + 0.5)) + 1
+    return y0, y1, x0, x1
+
+
 # format: dm, (y0, y1, x0, x1), bbox, theta=sigmas[i]
-def _calculate_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
+def _calc_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
     y0, y1, x0, x1 = region
     area = np.prod(np.array(bbox[2:])) * sigma
     depth_map[y0: y1, x0: x1] = np.sqrt(area / np.pi)
 
 
-def _calculate_offset(offset_map, region, parent_y, parent_x):
+def _calc_offset(offset_map, region, parent_y, parent_x):
     y0, y1, x0, x1 = region
     x_area, y_area = offset_map[:, y0: y1, x0: x1]
     x_vec = np.power(np.subtract(np.arange(x0, x1), parent_x), 2)
@@ -38,7 +61,37 @@ def _calculate_offset(offset_map, region, parent_y, parent_x):
     yv = np.divide(yv, dist)  # normalize y
     offset_map[0, y0: y1, x0: x1] = np.maximum(x_area, xv)
     offset_map[1, y0: y1, x0: x1] = np.maximum(y_area, yv)
-    print(offset_map)
+
+
+def _calc_gaussian(heatmap, region, center_x, center_y, theta=2., threshold=4.605):
+    # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
+    y0, y1, x0, x1 = region
+    # fast way
+    heat_area = heatmap[y0: y1, x0: x1]
+    factor = 1 / 2.0 / theta / theta
+    x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
+    y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
+    xv, yv = np.meshgrid(x_vec, y_vec)
+    _sum = factor * (xv + yv)
+    _exp = np.exp(-_sum)
+    _exp[_sum > threshold] = 0
+    heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
+
+
+def _calc_gaussian_2(heatmap, center_x, center_y, theta=1., threshold=4.605):
+    height, width = heatmap.shape
+    y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, theta, threshold)
+    # fast way
+    heat_area = heatmap[y0: y1, x0: x1]
+    factor = 1 / 2.0 / theta / theta
+    x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
+    y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
+    xv, yv = np.meshgrid(x_vec, y_vec)
+    _sum = factor * (xv + yv)
+    _exp = np.exp(-_sum)
+    _exp[_sum > threshold] = 0
+    heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
+    return y0, y1, x0, x1
 
 
 def _make_maps(keypoints, bboxes,
@@ -66,9 +119,9 @@ def _make_maps(keypoints, bboxes,
             center_x, center_y = people[i * 3] * x_scale, people[i * 3 + 1] * y_scale
             if 0 < center_x < hm_width and 0 < center_y < hm_height:
                 y0, y1, x0, x1 = _get_region_2(hm_height, hm_width, center_x, center_y, sigmas[i], bbox)
-                _add_gaussian_2(hm, (y0, y1, x0, x1), center_x, center_y)
-                _calculate_radius(dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i])
-                _calculate_offset(om, (y0, y1, x0, x1), people[parent[j] * 3], people[parent[j] * 3 + 1])
+                _calc_gaussian(hm, (y0, y1, x0, x1), center_x, center_y)
+                _calc_radius(dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i])
+                _calc_offset(om, (y0, y1, x0, x1), people[parent[j] * 3], people[parent[j] * 3 + 1])
             else:
                 continue
         hms[i, :, :] = hm
@@ -77,86 +130,6 @@ def _make_maps(keypoints, bboxes,
     oms[0, :, :] = np.sum(oms[0: 2:, :, :], axis=0)
     oms[1, :, :] = np.sum(oms[1: 2:, :, :], axis=0)
     return np.sum(hms, axis=0), np.sum(dms, axis=0), oms[0: 2, :, :]
-
-
-# def _make_all_in_one_keypoints_map(keypoints,
-#                                    im_height, im_width,
-#                                    hm_height, hm_width,
-#                                    sigmas,
-#                                    num_parts=19):
-#     x_scale = hm_width / im_width
-#     y_scale = hm_height / im_height
-#
-#     heatmap = np.zeros((hm_height, hm_width), dtype=np.float32)
-#
-#     for j in range(len(keypoints)):  # 'keypoints' is list of lists
-#         people = keypoints[j]
-#         for i in range(num_parts):
-#             if people[i * 3 + 2] == 0:  # 0 = not labeled, 1 = labeled not visible
-#                 continue
-#             center_x = people[i * 3] * x_scale
-#             center_y = people[i * 3 + 1] * y_scale
-#             if 0 < center_x < hm_width and 0 < center_y < hm_height:
-#                 _add_gaussian(heatmap, center_x, center_y, theta=sigmas[i])
-#             else:
-#                 continue
-#     return heatmap
-
-
-def _get_region(height, width, center_x, center_y, sigma, threshold):
-    # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
-    delta = math.sqrt(threshold * 2)
-    # top-left corner
-    x0 = int(max(0, center_x - delta * sigma + 0.5))
-    y0 = int(max(0, center_y - delta * sigma + 0.5))
-    # bottom-right corner
-    x1 = int(min(width - 1, center_x + delta * sigma + 0.5)) + 1
-    y1 = int(min(height - 1, center_y + delta * sigma + 0.5)) + 1
-    return y0, y1, x0, x1
-
-
-def _get_region_2(im_height, im_width, center_x, center_y, sigma, bbox):
-    radius = math.sqrt(np.prod(np.array(bbox[2:])) / np.pi) * sigma
-    # top-left corner
-    x0 = int(max(0, center_x - radius + 0.5))
-    y0 = int(max(0, center_y - radius + 0.5))
-    # bottom-right corner
-    x1 = int(min(im_width - 1, center_x + radius + 0.5)) + 1
-    y1 = int(min(im_height - 1, center_y + radius + 0.5)) + 1
-    return y0, y1, x0, x1
-
-
-def _add_gaussian_2(heatmap, region, center_x, center_y, theta=2., threshold=4.605):
-    # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
-    y0, y1, x0, x1 = region
-    # fast way
-    heat_area = heatmap[y0: y1, x0: x1]
-    factor = 1 / 2.0 / theta / theta
-    x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
-    y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
-    xv, yv = np.meshgrid(x_vec, y_vec)
-    _sum = factor * (xv + yv)
-    _exp = np.exp(-_sum)
-    _exp[_sum > threshold] = 0
-    print("heat: ", _exp)
-    heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
-
-
-def _add_gaussian(heatmap, center_x, center_y, theta=1., threshold=4.605):
-    height, width = heatmap.shape
-    y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, theta, threshold)
-    # fast way
-    heat_area = heatmap[y0: y1, x0: x1]
-    factor = 1 / 2.0 / theta / theta
-    x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
-    y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
-    xv, yv = np.meshgrid(x_vec, y_vec)
-    _sum = factor * (xv + yv)
-    _exp = np.exp(-_sum)
-    _exp[_sum > threshold] = 0
-
-    heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
-    return y0, y1, x0, x1
 
 
 def person_center(bbox, scale=(1 - 0.618)):  # bbox = [y, x, h, w]
@@ -231,3 +204,26 @@ def pad_image(img, pad_value, min_dims, stride=1.):
                                     borderType=cv2.BORDER_CONSTANT, value=pad_value)
     return padded_img, [top, left, bottom, right]
 
+
+# def _make_all_in_one_keypoints_map(keypoints,
+#                                    im_height, im_width,
+#                                    hm_height, hm_width,
+#                                    sigmas,
+#                                    num_parts=19):
+#     x_scale = hm_width / im_width
+#     y_scale = hm_height / im_height
+#
+#     heatmap = np.zeros((hm_height, hm_width), dtype=np.float32)
+#
+#     for j in range(len(keypoints)):  # 'keypoints' is list of lists
+#         people = keypoints[j]
+#         for i in range(num_parts):
+#             if people[i * 3 + 2] == 0:  # 0 = not labeled, 1 = labeled not visible
+#                 continue
+#             center_x = people[i * 3] * x_scale
+#             center_y = people[i * 3 + 1] * y_scale
+#             if 0 < center_x < hm_width and 0 < center_y < hm_height:
+#                 _add_gaussian(heatmap, center_x, center_y, theta=sigmas[i])
+#             else:
+#                 continue
+#     return heatmap
