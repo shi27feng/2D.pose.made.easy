@@ -20,7 +20,7 @@ def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
     return mask
 
 
-def _get_region(height, width, center_x, center_y, sigma, threshold):
+def _get_region_2(height, width, center_x, center_y, sigma, threshold):
     # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
     delta = math.sqrt(threshold * 2)
     # top-left corner
@@ -32,7 +32,7 @@ def _get_region(height, width, center_x, center_y, sigma, threshold):
     return y0, y1, x0, x1
 
 
-def _get_region_2(im_height, im_width, center_x, center_y, sigma, bbox):
+def _get_region(im_height, im_width, center_x, center_y, sigma, bbox):
     radius = math.sqrt(np.prod(np.array(bbox[2:])) / np.pi) * sigma
     # top-left corner
     x0 = int(max(0, center_x - radius + 0.5))
@@ -46,8 +46,9 @@ def _get_region_2(im_height, im_width, center_x, center_y, sigma, bbox):
 # format: dm, (y0, y1, x0, x1), bbox, theta=sigmas[i]
 def _calc_radius(depth_map, region, bbox, sigma=1., epsilon=0.1):
     y0, y1, x0, x1 = region
+    depth_area = depth_map[y0: y1, x0: x1]
     area = np.prod(np.array(bbox[2:])) * sigma
-    depth_map[y0: y1, x0: x1] = np.sqrt(area / np.pi)
+    depth_map[y0: y1, x0: x1] = np.maximum(depth_area, np.sqrt(area / np.pi))
 
 
 def _calc_offset(offset_map, region, parent_y, parent_x):
@@ -118,7 +119,7 @@ def _make_maps(keypoints, bboxes,
                 continue
             center_x, center_y = people[i * 3] * x_scale, people[i * 3 + 1] * y_scale
             if 0 < center_x < hm_width and 0 < center_y < hm_height:
-                y0, y1, x0, x1 = _get_region_2(hm_height, hm_width, center_x, center_y, sigmas[i], bbox)
+                y0, y1, x0, x1 = _get_region(hm_height, hm_width, center_x, center_y, sigmas[i], bbox)
                 _calc_gaussian(hm, (y0, y1, x0, x1), center_x, center_y)
                 _calc_radius(dm, (y0, y1, x0, x1), bbox, sigma=sigmas[i])
                 _calc_offset(om, (y0, y1, x0, x1), people[parent[j] * 3], people[parent[j] * 3 + 1])
