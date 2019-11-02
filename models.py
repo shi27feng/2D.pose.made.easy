@@ -42,7 +42,7 @@ class ResNet(nn.Module):
             self.layers.append(self._make_layer(cfg['block'],
                                                 cfg['channels'][offset + i],
                                                 cfg['blocks'][i],
-                                                stride=2))
+                                                stride=2 if i < len(cfg['blocks']) - 1 else 1))
         self._initialize()
 
     def _make_layer(self, block, planes, blocks, stride=1):
