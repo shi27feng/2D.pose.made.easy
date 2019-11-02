@@ -35,9 +35,9 @@ def _calculate_offset(offset_map, region, parent_y, parent_x):
     dist = np.sqrt(xv + yv)  # sqrt(y^2 + x^2)
     xv = np.divide(xv, dist)  # normalize x
     yv = np.divide(yv, dist)  # normalize y
-    offset_map[y0: y1, x0: x1, 0] = xv
-    offset_map[y0: y1, x0: x1, 1] = yv
-    return
+    offset_map[0, y0: y1, x0: x1] = xv
+    offset_map[1, y0: y1, x0: x1] = yv
+    print(offset_map)
 
 
 def _make_maps(keypoints, bboxes,
@@ -54,7 +54,7 @@ def _make_maps(keypoints, bboxes,
     for i in range(num_parts):
         hm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)  # heat maps
         dm = np.zeros(shape=(hm_height, hm_width), dtype=np.float32)  # depth maps
-        om = np.zeros(shape=(hm_height, hm_width, 2), dtype=np.float32)  # offset maps
+        om = np.zeros(shape=(2, hm_height, hm_width), dtype=np.float32)  # offset maps
         for j in range(len(keypoints)):  # 'keypoints' is list of lists
             people = keypoints[j]
             bbox = bboxes[j]
@@ -70,12 +70,12 @@ def _make_maps(keypoints, bboxes,
                 _calculate_offset(om, (y0, y1, x0, x1), people[parent[j] * 3], people[parent[j] * 3 + 1])
             else:
                 continue
-        hms[:, :, i] = hm
-        dms[:, :, i] = dm
-        oms[:, :, i: i + 2] = om
-    oms[:, :, 0] = np.sum(oms[:, :, 0: 2:], axis=2)
-    oms[:, :, 1] = np.sum(oms[:, :, 1: 2:], axis=2)
-    return np.sum(hms, axis=2), np.sum(dms, axis=2), oms[:, :, 0: 2]
+        hms[i, :, :] = hm
+        dms[i, :, :] = dm
+        oms[i: i + 2, :, :] = om
+    oms[0, :, :] = np.sum(oms[:, :, 0: 2:], axis=0)
+    oms[1, :, :] = np.sum(oms[:, :, 1: 2:], axis=0)
+    return np.sum(hms, axis=0), np.sum(dms, axis=0), oms[0: 2, :, :]
 
 
 # def _make_all_in_one_keypoints_map(keypoints,
