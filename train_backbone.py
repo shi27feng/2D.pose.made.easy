@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from coco import CocoDataset, evaluate
-from models import HourglassNet, Bottleneck
+from models import ResNet, ResNet_Spec
 from loss import l2loss
 cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)  # To prevent freeze of DataLoader
@@ -21,15 +21,12 @@ def train(cfg_trn, cfg_vld):
     log_after = cfg_trn['log_after']
     checkpoint_after = cfg_trn['checkpoint_after']
 
-    val_after = cfg_vld['val_after']
-    val_labels = cfg_vld['annF']
-    val_output_name = cfg_vld['']
-    val_images_folder = cfg_vld['root']
+    # val_after = cfg_vld['val_after']
+    # val_labels = cfg_vld['annF']
+    # val_output_name = cfg_vld['']
+    # val_images_folder = cfg_vld['root']
 
-    net = HourglassNet(Bottleneck,
-                       num_stacks=cfg_trn['num_stacks'],
-                       num_blocks=cfg_trn['num_blocks'],
-                       num_classes=cfg_trn['num_classes'])
+    net = ResNet(ResNet_Spec[18])
 
     dataset = CocoDataset(cfg=cfg_trn)
     train_loader = DataLoader(dataset,
