@@ -73,7 +73,6 @@ class ResNet(nn.Module):
         net = x
         for layer in self.layers:
             net = layer(x)
-
         return net
 
 
