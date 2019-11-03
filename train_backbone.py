@@ -155,9 +155,9 @@ if __name__ == '__main__':
     # parser.add_argument('--val-after', type=int, default=5000,
     #                     help='number of iterations to run validation')
     # args = parser.parse_args()
-    from config import train_config, valid_config
-    checkpoints_folder = '{}_checkpoints'.format(train_config['checkpoints_folder'])
+    from config import _config_train, _config_valid
+    checkpoints_folder = '{}_checkpoints'.format(_config_train['checkpoints_folder'])
     if not os.path.exists(checkpoints_folder):
         os.makedirs(checkpoints_folder)
 
-    train(train_config, valid_config)
+    train(_config_train, _config_valid)

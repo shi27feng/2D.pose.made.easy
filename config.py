@@ -26,7 +26,7 @@ parent_keypoint = [1, 18,
                    14, 15,
                    18]
 
-train_config = {
+_config_train = {
     'root': os.path.join(os.path.expanduser('~'), "Datasets/coco/train2017"),
     'annF': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_train2017.json"),
     'annP': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_train2017.pkl"),
@@ -46,7 +46,7 @@ train_config = {
     'transform': None
 }
 
-valid_config = {
+_config_valid = {
     'root': os.path.join(os.path.expanduser('~'), "Datasets/coco/val2017"),
     'annF': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_val2017.json"),
     'annP': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_val2017.pkl"),
