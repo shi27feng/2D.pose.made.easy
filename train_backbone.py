@@ -8,7 +8,7 @@ import torch.optim as opt
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from coco import CocoDataset, evaluate
+from coco import CocoDataset
 from models import ResNet, ResNet_Spec
 from loss import l2loss
 cv2.setNumThreads(0)
