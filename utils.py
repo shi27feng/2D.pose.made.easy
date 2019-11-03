@@ -1,6 +1,10 @@
 from __future__ import absolute_import
+
+import os
 import shutil
 import scipy
+import torch
+
 try:
     import cupy as np
 except ImportError:
@@ -19,18 +23,6 @@ def _make_mask(segmentation, height, width, scales):  # scales is for (x, y)
     if scales[0] != 1. and scales[1] != 1.:
         mask = cv2.resize(mask, dsize=None, fx=1 / scales[0], fy=1 / scales[0], interpolation=cv2.INTER_AREA)
     return mask
-
-
-# def _get_region_2(height, width, center_x, center_y, sigma, threshold):
-#     # [theta, radius]: [1.0, 3.5px]; [2.0, 6.5px], and [0.5, 2.0px]
-#     delta = math.sqrt(threshold * 2)
-#     # top-left corner
-#     x0 = int(max(0, center_x - delta * sigma + 0.5))
-#     y0 = int(max(0, center_y - delta * sigma + 0.5))
-#     # bottom-right corner
-#     x1 = int(min(width - 1, center_x + delta * sigma + 0.5)) + 1
-#     y1 = int(min(height - 1, center_y + delta * sigma + 0.5)) + 1
-#     return y0, y1, x0, x1
 
 
 def _get_region(im_height, im_width, center_x, center_y, sigma, bbox):
@@ -78,22 +70,6 @@ def _calc_gaussian(heatmap, region, center_x, center_y, theta=2., threshold=4.60
     _exp = np.exp(-_sum)
     _exp[_sum > threshold] = 0
     heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
-
-
-# def _calc_gaussian_2(heatmap, center_x, center_y, theta=1., threshold=4.605):
-#     height, width = heatmap.shape
-#     y0, y1, x0, x1 = _get_region(height, width, center_x, center_y, theta, threshold)
-#     # fast way
-#     heat_area = heatmap[y0: y1, x0: x1]
-#     factor = 1 / 2.0 / theta / theta
-#     x_vec = np.power(np.subtract(np.arange(x0, x1), center_x), 2)
-#     y_vec = np.power(np.subtract(np.arange(y0, y1), center_y), 2)
-#     xv, yv = np.meshgrid(x_vec, y_vec)
-#     _sum = factor * (xv + yv)
-#     _exp = np.exp(-_sum)
-#     _exp[_sum > threshold] = 0
-#     heatmap[y0: y1, x0: x1] = np.maximum(heat_area, _exp)
-#     return y0, y1, x0, x1
 
 
 def _make_maps(keypoints, bboxes,
@@ -239,16 +215,25 @@ def adjust_learning_rate(optimizer, epoch, lr, schedule, gamma):
     return lr
 
 
-def save_checkpoint(state, preds, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar', snapshot=None):
-    preds = to_numpy(preds)
+def to_numpy(tensor):
+    if torch.is_tensor(tensor):
+        return tensor.detach().cpu().numpy()
+    elif type(tensor).__module__ != 'numpy':
+        raise ValueError("Cannot convert {} to numpy array"
+                         .format(type(tensor)))
+    return tensor
+
+
+def save_checkpoint(state, predicts, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar', snapshot=None):
+    predicts = to_numpy(predicts)
     filepath = os.path.join(checkpoint, filename)
     torch.save(state, filepath)
-    scipy.io.savemat(os.path.join(checkpoint, 'preds.mat'),
-                     mdict={'preds' : preds})
+    scipy.io.savemat(os.path.join(checkpoint, 'predicts.mat'),
+                     mdict={'predicts': predicts})
 
     if snapshot and state.epoch % snapshot == 0:
         shutil.copyfile(filepath, os.path.join(checkpoint, 'checkpoint_{}.pth.tar'.format(state.epoch)))
 
     if is_best:
         shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
-        scipy.io.savemat(os.path.join(checkpoint, 'preds_best.mat'), mdict={'preds' : preds})
+        scipy.io.savemat(os.path.join(checkpoint, 'preds_best.mat'), mdict={'predicts': predicts})
