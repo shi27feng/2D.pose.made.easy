@@ -56,7 +56,6 @@ class ResNet(nn.Module):
         # layers = [block(self.inplanes, planes, stride, down_sample)]
         layers = [block(self.inplanes, planes, downsample=down_sample)]
         self.inplanes = planes * block.expansion
-
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
@@ -70,10 +69,25 @@ class ResNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        net = x
         for layer in self.layers:
-            net = layer(x)
-        return net
+            x = layer(x)
+        return x
+
+
+class PoseResNet(nn.Module):
+    def __init__(self, config, num_output_channels=4):
+        super(PoseResNet).__init__()
+        self.config = config
+        self._num_out_channels = num_output_channels
+        self.backbone = ResNet(cfg=config)
+        self.last_layer = nn.Conv2d(in_channels=512,
+                                    out_channels=num_output_channels,
+                                    kernel_size=(3, 3))  # kernel_size=(1, 1)
+
+    def forward(self, x, **kwargs):
+        x = self.backbone(x)
+        x = self.last_layer(x)
+        return x
 
 
 """
