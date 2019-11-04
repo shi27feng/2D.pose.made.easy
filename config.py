@@ -38,7 +38,7 @@ _config_train = {
     'num_stacks': 2,
     'num_blocks': 1,
     'num_classes': 17 + 2,  # 1 for neck or 2 for both neck and torso
-    'train_size': (380, 240),   # ?
+    'img_size_batch': (640, 380),   # ?
     'log_after': 100,
     'checkpoints_folder': "checkpoints",
     'checkpoints_after': 5000,

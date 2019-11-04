@@ -21,7 +21,7 @@ class CocoDataset(data.Dataset):
         self.sigmas = cfg['sigmas']
         self.parent = cfg['parent']
         if is_train:
-            self.train_size = cfg['train_size']
+            self.img_size_batch = cfg['img_size_batch']
         if os.path.exists(cfg['annP']):
             import pickle
             with open(cfg['annP'], 'rb') as f:
@@ -41,15 +41,17 @@ class CocoDataset(data.Dataset):
         img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
         h, w, _ = img.shape
         img = (img.astype(np.float32) - 128) / 256   # normalize image
-        if len(self.train_size) != 0:
-            img = cv2.resize(img, self.train_size)
-            h, w = self.train_size
+        if len(self.img_size_batch) != 0:
+            img = cv2.resize(img, self.img_size_batch, interpolation=cv2.INTER_AREA)
+            h, w = self.img_size_batch
         sample = {
             'annotation': ann,
             'image': img.transpose((2, 0, 1)),  # why transpose?
         }
         if self.is_train:
-            # TODO mask = _make_mask(ann['segmentation'], ann['img_height'], ann['img_width'], self.scales)
+            # TODO mask = _make_mask(ann['segmentation'],
+            #                        ann['img_height'],
+            #                        ann['img_width'], self.scales)
             # TODO transformation of images
             # if self.transforms is not None:
             #     img, target = self.transforms(img, target)
