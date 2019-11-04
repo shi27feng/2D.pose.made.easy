@@ -32,11 +32,13 @@ _config_train = {
     'annP': os.path.join(os.path.expanduser('~'), "Datasets/coco/annotations/person_keypoints_train2017.pkl"),
     'scales': [8., 8.],  # x, y-axis
     'batches_per_iter': 16,
+    'max_num_epochs': 280,   # number of epochs
     'base_lr': 1e-3,
     'num_workers': 8,
     'num_stacks': 2,
     'num_blocks': 1,
     'num_classes': 17 + 2,  # 1 for neck or 2 for both neck and torso
+    'train_size': (380, 240),   # ?
     'log_after': 100,
     'checkpoints_folder': "checkpoints",
     'checkpoints_after': 5000,

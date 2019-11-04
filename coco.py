@@ -10,6 +10,7 @@ import cv2
 import torch
 import torch.utils.data as data
 from utils import prepare_annotations, _make_maps, normalize_image, pad_image
+from image import im_resize
 
 
 class CocoDataset(data.Dataset):
@@ -19,6 +20,8 @@ class CocoDataset(data.Dataset):
         self.scales = cfg['scales']
         self.sigmas = cfg['sigmas']
         self.parent = cfg['parent']
+        if is_train:
+            self.train_size = cfg['train_size']
         if os.path.exists(cfg['annP']):
             import pickle
             with open(cfg['annP'], 'rb') as f:
@@ -36,7 +39,11 @@ class CocoDataset(data.Dataset):
         path = ann['img_path']
 
         img = cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
+        h, w, _ = img.shape
         img = (img.astype(np.float32) - 128) / 256   # normalize image
+        if len(self.train_size) != 0:
+            img = cv2.resize(img, self.train_size)
+            h, w = self.train_size
         sample = {
             'annotation': ann,
             'image': img.transpose((2, 0, 1)),  # why transpose?
@@ -47,11 +54,9 @@ class CocoDataset(data.Dataset):
             # if self.transforms is not None:
             #     img, target = self.transforms(img, target)
             hm, dm, om = _make_maps(ann['keypoints'], ann['bbox'],
-                                    ann['img_height'], ann['img_width'],
-                                    math.ceil(ann['img_height'] / self.scales[0]),
-                                    math.ceil(ann['img_width'] / self.scales[1]),
-                                    sigmas=self.sigmas,
-                                    parent=self.parent,
+                                    h, w,
+                                    h / self.scales[0], w / self.scales[1],
+                                    sigmas=self.sigmas, parent=self.parent,
                                     num_parts=(len(ann['keypoints'][0]) // 3))
             # TODO sample['mask'] = mask
             sample['keypoint_map'] = hm

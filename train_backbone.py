@@ -34,21 +34,9 @@ def train(cfg_trn, cfg_vld):
                               num_workers=cfg_trn['num_workers'],
                               shuffle=True)
 
-    optimizer = opt.Adam([
-        {'params': get_parameters_conv(net.model, 'weight')},
-        {'params': get_parameters_conv_depthwise(net.model, 'weight'), 'weight_decay': 0},
-        {'params': get_parameters_bn(net.model, 'weight'), 'weight_decay': 0},
-        {'params': get_parameters_bn(net.model, 'bias'), 'lr': base_lr * 2, 'weight_decay': 0},
-        {'params': get_parameters_conv(net.cpm, 'weight'), 'lr': base_lr},
-        {'params': get_parameters_conv(net.cpm, 'bias'), 'lr': base_lr * 2, 'weight_decay': 0},
-        {'params': get_parameters_conv_depthwise(net.cpm, 'weight'), 'weight_decay': 0},
-        {'params': get_parameters_conv(net.initial_stage, 'weight'), 'lr': base_lr},
-        {'params': get_parameters_conv(net.initial_stage, 'bias'), 'lr': base_lr * 2, 'weight_decay': 0},
-        {'params': get_parameters_conv(net.refinement_stages, 'weight'), 'lr': base_lr * 4},
-        {'params': get_parameters_conv(net.refinement_stages, 'bias'), 'lr': base_lr * 8, 'weight_decay': 0},
-        {'params': get_parameters_bn(net.refinement_stages, 'weight'), 'weight_decay': 0},
-        {'params': get_parameters_bn(net.refinement_stages, 'bias'), 'lr': base_lr * 2, 'weight_decay': 0},
-    ], lr=cfg_trn['base_lr'], weight_decay=5e-4)
+    optimizer = opt.Adam(net.parameters(),
+                         lr=cfg_trn['base_lr'],
+                         weight_decay=5e-4)
 
     num_iter = 0
     current_epoch = 0
