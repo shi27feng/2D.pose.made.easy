@@ -3,7 +3,7 @@ from __future__ import print_function, absolute_import
 import torch
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
-import torch.optim as optim
+import torch.optim as opt
 
 from models import ResNet_Spec, PoseResNet
 from torch.utils.data import DataLoader
@@ -28,15 +28,15 @@ def train(model, config_train, config_valid):
                               batch_size=config_train['batch_size'],
                               shuffle=True,
                               num_workers=config_train['num_workers'])
-    optimizer = optim.Adam(model.parameters(),
-                           lr=config_train['base_lr'],
-                           weight_decay=5e-4)
+    optimizer = opt.Adam(model.parameters(),
+                         lr=config_train['base_lr'],
+                         weight_decay=5e-4)
     num_iter = 0
     current_epoch = 0
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
-                                               milestones=[100, 200, 260],
-                                               gamma=0.333)
-    model = torch.nn.DataParallel(model).to(device)
+    scheduler = opt.lr_scheduler.MultiStepLR(optimizer,
+                                             milestones=[100, 200, 260],
+                                             gamma=0.333)
+    model = DataParallel(model).to(device)
     model.train()
     for epoch in range(current_epoch, max_num_epochs):
         scheduler.step(epoch=epoch)
@@ -48,8 +48,11 @@ def train(model, config_train, config_valid):
             keypoint_maps = batched_samples['keypoint_map'].cuda()
             depth_maps = batched_samples['depth_map'].cuda()
             offset_maps = batched_samples['offset_map'].cuda()
-
+            # TODO loss
+            predictions = model(images)
+            # loss keypoint map
 
 def main():
     model = PoseResNet(ResNet_Spec[18])
+    train(model=model, config_train=cfg_trn, config_valid=cfg_val)
 
